@@ -19,9 +19,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA 
  */ 
 
-
+#include <MC81F8816/MC81F8816.h>
+#include <hms800.h>
 
 #include "uv3r.h"
+
+static unsigned char encoderState = 0;
 
 // Read the dial encoder using gray code to avoid debouncing. 
 //Insperations from

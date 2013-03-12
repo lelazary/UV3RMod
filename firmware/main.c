@@ -64,7 +64,7 @@ void getSelfBias(void)
 
 }
 
-static unsigned char encoderState = 0;
+
 
 long freq = 0xFFFF;
 

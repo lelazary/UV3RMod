@@ -18,13 +18,15 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA 
  */ 
-
+#include <MC81F8816/MC81F8816.h>
+#include <hms800.h>
 #include "rda.h"
 #include "spi.h"
 #include "uv3r.h"
 
 void initRDA1846()
 {
+  int i;
   RDA1846_SEN = 1;
   RDA1846_SCK = 1;
   for(i=0; i<30; i++)

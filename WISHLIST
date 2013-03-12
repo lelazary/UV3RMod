@@ -1,0 +1,9 @@
+This file contains a wishlist for the firmwere
+
+1) DTMF send and receive
+2) Full control over the radio and the RDA1846 through serial
+3) Simple and quick programming for channels.
+4) Automatics frequency adjustment for satellite down-link.
+5) Simple digital interface RX/TX like RTTY, morse, etc.. on the chip.
+
+

@@ -1,0 +1,2 @@
+* Writing a nice python (or multi platform) interface between the PC and the arduino to upload new code. For now you need to copy and paste the hex code into the serial debugger within the arduino software to flash.
+

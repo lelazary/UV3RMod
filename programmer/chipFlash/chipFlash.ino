@@ -21,17 +21,17 @@
 
 #include <avr/io.h> 
 
-int CLK = 7;
-int SIO = 6;
+int SCK = 7;
+int SDA = 6;
 int VPP = 5;
 
 // the setup routine runs once when you press reset:
 void setup() {                
   // initialize the digital pin as an output.
-  pinMode(CLK, OUTPUT);   
-  pinMode(SIO, OUTPUT);   
+  pinMode(SCK, OUTPUT);   
+  pinMode(SDA, OUTPUT);   
   pinMode(VPP, OUTPUT);   
-  digitalWrite(CLK, LOW);
+  digitalWrite(SCK, LOW);
   digitalWrite(VPP, HIGH);
    
   Serial.begin(9600);  
@@ -43,11 +43,11 @@ unsigned char waitForData()
 {
   unsigned char gotData = 0;
   int i;
-  pinMode(SIO, INPUT);
+  pinMode(SDA, INPUT);
   
   for(i=0; i<3000; i++)
   {
-    if (!digitalRead(SIO)) //Wait until we get a response
+    if (!digitalRead(SDA)) //Wait until we get a response
     {
       break;
       gotData = 1;
@@ -60,22 +60,22 @@ unsigned char waitForData()
 
 void spiTX(unsigned char data)
 {
-  pinMode(SIO, OUTPUT);
+  pinMode(SDA, OUTPUT);
   int counter;
   for(counter=8; counter  ; counter--)
   {
     //Place the data on the line
     if (data & 0x01)
-      digitalWrite(SIO, HIGH);
+      digitalWrite(SDA, HIGH);
     else
-      digitalWrite(SIO, LOW);
+      digitalWrite(SDA, LOW);
       
     //Clock the data
-    digitalWrite(CLK, LOW);
+    digitalWrite(SCK, LOW);
     delayMicroseconds(4);
   
     //Set data/read
-    digitalWrite(CLK, HIGH);
+    digitalWrite(SCK, HIGH);
     delayMicroseconds(8);
     
     data >>= 1; //next bit
@@ -86,30 +86,30 @@ void spiTX(unsigned char data)
 unsigned char spiRX()
 {
   unsigned char data;
-  pinMode(SIO, INPUT);
+  pinMode(SDA, INPUT);
   int counter;
   for(counter=0; counter<8  ; counter++)
   {
     data >>= 1;
-    digitalWrite(CLK, LOW);
+    digitalWrite(SCK, LOW);
     delayMicroseconds(4);
     //Set data/read
-    digitalWrite(CLK, HIGH);
-    if (digitalRead(SIO)) 
+    digitalWrite(SCK, HIGH);
+    if (digitalRead(SDA)) 
       data |= 0x80;
     delayMicroseconds(8);
        
   }
-  pinMode(SIO, OUTPUT);
-  digitalWrite(SIO, HIGH);
+  pinMode(SDA, OUTPUT);
+  digitalWrite(SDA, HIGH);
   return data;
 }
 
 void enterISP()
 {
   //Enter 
-  digitalWrite(CLK, HIGH);
-  digitalWrite(SIO, HIGH);
+  digitalWrite(SCK, HIGH);
+  digitalWrite(SDA, HIGH);
   digitalWrite(VPP, LOW);
   delay(240); 
 }
@@ -117,8 +117,8 @@ void enterISP()
 void exitISP()
 {
   delay(200);
-  digitalWrite(CLK, LOW);
-  digitalWrite(SIO, LOW);
+  digitalWrite(SCK, LOW);
+  digitalWrite(SDA, LOW);
   digitalWrite(VPP, HIGH);  
 }
 

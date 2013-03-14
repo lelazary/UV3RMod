@@ -21,36 +21,45 @@
 
 #include <avr/io.h> 
 
-int SCK = 7;
-int SDA = 6;
-int VPP = 5;
+//Programming pin out
+#define MC_SCK 7
+#define MC_SDA 6
+#define MC_VPP 5
+
+#define LED 13
+
+#define FALSE 0
+#define TRUE 1
 
 // the setup routine runs once when you press reset:
 void setup() {                
+  Serial.begin(19200);  
+
   // initialize the digital pin as an output.
-  pinMode(SCK, OUTPUT);   
-  pinMode(SDA, OUTPUT);   
-  pinMode(VPP, OUTPUT);   
-  digitalWrite(SCK, LOW);
-  digitalWrite(VPP, HIGH);
+  pinMode(MC_SCK, OUTPUT);   
+  pinMode(MC_SDA, OUTPUT);   
+  pinMode(MC_VPP, OUTPUT);   
+  pinMode(LED, OUTPUT);   
+  digitalWrite(MC_SCK, LOW);
+  digitalWrite(MC_VPP, HIGH);
+  digitalWrite(LED, LOW);   
    
-  Serial.begin(9600);  
 }
 
-unsigned char flashData[128];
+unsigned char flashData[256]; // global block storage
 
 unsigned char waitForData()
 {
-  unsigned char gotData = 0;
+  unsigned char gotData = FALSE;
   int i;
-  pinMode(SDA, INPUT);
+  pinMode(MC_SDA, INPUT);
   
   for(i=0; i<3000; i++)
   {
-    if (!digitalRead(SDA)) //Wait until we get a response
+    if (!digitalRead(MC_SDA)) //Wait until we get a response
     {
       break;
-      gotData = 1;
+      gotData = TRUE;
     }
     delayMicroseconds(100);
   }  
@@ -60,22 +69,22 @@ unsigned char waitForData()
 
 void spiTX(unsigned char data)
 {
-  pinMode(SDA, OUTPUT);
+  pinMode(MC_SDA, OUTPUT);
   int counter;
   for(counter=8; counter  ; counter--)
   {
     //Place the data on the line
     if (data & 0x01)
-      digitalWrite(SDA, HIGH);
+      digitalWrite(MC_SDA, HIGH);
     else
-      digitalWrite(SDA, LOW);
+      digitalWrite(MC_SDA, LOW);
       
     //Clock the data
-    digitalWrite(SCK, LOW);
+    digitalWrite(MC_SCK, LOW);
     delayMicroseconds(4);
   
     //Set data/read
-    digitalWrite(SCK, HIGH);
+    digitalWrite(MC_SCK, HIGH);
     delayMicroseconds(8);
     
     data >>= 1; //next bit
@@ -86,40 +95,42 @@ void spiTX(unsigned char data)
 unsigned char spiRX()
 {
   unsigned char data;
-  pinMode(SDA, INPUT);
+  pinMode(MC_SDA, INPUT);
   int counter;
   for(counter=0; counter<8  ; counter++)
   {
     data >>= 1;
-    digitalWrite(SCK, LOW);
+    digitalWrite(MC_SCK, LOW);
     delayMicroseconds(4);
     //Set data/read
-    digitalWrite(SCK, HIGH);
-    if (digitalRead(SDA)) 
+    digitalWrite(MC_SCK, HIGH);
+    if (digitalRead(MC_SDA)) 
       data |= 0x80;
     delayMicroseconds(8);
        
   }
-  pinMode(SDA, OUTPUT);
-  digitalWrite(SDA, HIGH);
+  pinMode(MC_SDA, OUTPUT);
+  digitalWrite(MC_SDA, HIGH);
   return data;
 }
 
 void enterISP()
 {
   //Enter 
-  digitalWrite(SCK, HIGH);
-  digitalWrite(SDA, HIGH);
-  digitalWrite(VPP, LOW);
+  digitalWrite(MC_SCK, HIGH);
+  digitalWrite(MC_SDA, HIGH);
+  digitalWrite(MC_VPP, LOW);
   delay(240); 
+  digitalWrite(LED, HIGH);   
 }
 
 void exitISP()
 {
   delay(200);
-  digitalWrite(SCK, LOW);
-  digitalWrite(SDA, LOW);
-  digitalWrite(VPP, HIGH);  
+  digitalWrite(MC_SCK, LOW);
+  digitalWrite(MC_SDA, LOW);
+  digitalWrite(MC_VPP, HIGH);  
+  digitalWrite(LED, LOW);   
 }
 
 void sendData(unsigned char* data, int length)
@@ -131,6 +142,13 @@ void sendData(unsigned char* data, int length)
     delayMicroseconds(100);
   }
 }
+
+uint8_t getch() {
+  while(!Serial.available());
+  return Serial.read();
+}
+
+
 
 unsigned char getChipID()
 {
@@ -146,9 +164,9 @@ unsigned char getChipID()
   Serial.println(val, HEX);
 
   if (val == 0x82)
-    return 1; //Success
+    return TRUE; //Success
   else
-    return 0; //Fail to get ID
+    return FALSE; //Fail to get ID
   
 }
 
@@ -207,13 +225,12 @@ void setEraseMode()
   
 }
 
-void eraseFlash()
+unsigned char eraseFlash()
 {
-  enterISP();
   if (!getChipID())
   {
     Serial.println("Failed to get chip ID");
-    return;
+    return FALSE;
   }
   delay(30);
   setEraseMode();
@@ -224,10 +241,7 @@ void eraseFlash()
   setRegister();
   delay(30);
   
-  exitISP();
-  
-  Serial.println("Finished Erasing");
-  
+  return TRUE;
   
 }
 
@@ -240,30 +254,28 @@ void setFastClock()
   } 
 }
 
-void programFuse()
+unsigned char programFuse()
 {
-  enterISP();
   if (!getChipID())
   {
     Serial.println("Failed to get chip ID");
-    return;
+    return FALSE;
   }
   delay(30);
   setMode();
   delay(30);
   setRegister();
   delay(30);
-  
-  exitISP();
+ 
+  return TRUE;
 }
 
-void programFlash(unsigned short addr, unsigned char len)
+unsigned char programFlash(unsigned short addr, unsigned char len)
 {
-  enterISP();
   if (!getChipID())
   {
     Serial.println("Failed to get chip ID");
-    return;
+    return FALSE;
   }
   delay(30);
   setMode();
@@ -284,8 +296,8 @@ void programFlash(unsigned short addr, unsigned char len)
   unsigned char val = spiRX();
   Serial.print("Program result: ");
   Serial.println(val, HEX);
-  
-  exitISP();
+ 
+  return TRUE;
 }
 
 void setReadRange(unsigned short startAddr, unsigned short endAddr)
@@ -304,14 +316,21 @@ void setReadRange(unsigned short startAddr, unsigned short endAddr)
 }
 
 
-void readFlash(unsigned short startAddr, unsigned short endAddr)
+unsigned char readFlash(unsigned short startAddr, unsigned short endAddr)
 {
-  enterISP();
   int i=0; 
+  unsigned short len = endAddr - startAddr;
+
+  if (len > 255)
+  {
+    Serial.println("Only 255 byte can be returned at a time");
+    return FALSE;
+  }
+
   if (!getChipID())
   {
     Serial.println("Failed to get chip ID");
-    return;
+    return FALSE;
   }
   delay(30);
   setMode();
@@ -321,24 +340,21 @@ void readFlash(unsigned short startAddr, unsigned short endAddr)
   
   waitForData();
   
-  unsigned short len = endAddr - startAddr;
-  
-  unsigned char buffer[len];
   for(i=0; i<len; i++)
-    buffer[i] = spiRX();
+    flashData[i] = spiRX();
   
   setMode();
   delay(30);
   
-  exitISP();
- 
   Serial.println("Data: "); 
   for(i=0; i<len; i++)
   {
-     Serial.print(buffer[i], HEX);
+     Serial.print(flashData[i], HEX);
      Serial.print(" ");
   }
   Serial.println();
+
+  return TRUE;
 }
 
 byte getVal(char c)
@@ -349,114 +365,148 @@ byte getVal(char c)
      return (byte)(c-'A'+10);
 }
 
-void loop() {
-  int i;
+int mcuisp()
+{
 
-  if (Serial.available() > 0)
-   {
-     unsigned char d = Serial.read();
-     switch (d)
-     {
-       case 'F': 
-       {
-           Serial.println("Config Device");
-           programFuse();
-           break;
-       }
-       case 'E':
-       {
-          Serial.println("Erasing");
-          eraseFlash();
-          break;
-       }
-       case 'R':
-       {
-          char strData[9];
-          i = 0;
-          while(i < 9)
-            if (Serial.available() > 0)
-              strData[i++] = Serial.read();
-          unsigned short startAddr = 
-             (getVal(strData[0]) << 12) |
-             (getVal(strData[1]) << 8)  |
-             (getVal(strData[2]) << 4)  |
-              getVal(strData[3]);
+  uint8_t ch = getch();
 
-          unsigned short endAddr = 
-             (getVal(strData[5]) << 12) |
-             (getVal(strData[6]) << 8)  |
-             (getVal(strData[7]) << 4)  |
-              getVal(strData[8]);
-          Serial.println("Reading");
-          Serial.print(startAddr, HEX);
-          Serial.print(" ");
-          Serial.println(endAddr, HEX);
-          readFlash(startAddr, endAddr);
-          break;
-       }
-       case 'P':
-       {
-          char strData[4];
-          i = 0;
-          while(i < 4)
-            if (Serial.available() > 0)
-              strData[i++] = Serial.read();
-          unsigned short addr = 
-             (getVal(strData[0]) << 12) |
-             (getVal(strData[1]) << 8)  |
-             (getVal(strData[2]) << 4)  |
-              getVal(strData[3]);
-              
-         Serial.read(); //Skip the space
-         unsigned char gotData = 0;
-         unsigned char len = 0;
-         while(!gotData)
-         {
-           if (Serial.available() > 2)
-           {
-             
-             for(i=0; i<3; i++)
-              strData[i] = Serial.read();
-             if (strData[1] == '#') //End of data
-             {
-               gotData = 1;
-               break;
-             }
-             else 
-             {
-               flashData[len++] = 
-                 (getVal(strData[1]) << 4)  |
-                  getVal(strData[2]);
-             }
-             if (len > 128) break; //only up to 128 char
-           } else {
-            // break;
-           }
-         }
+  switch (ch) {
+    case 'S': //Enter ISP mode
+      enterISP();
+      Serial.println("Enter ISP");
+      Serial.println("OK");
+      return 1;
+      break; 
+    case 'C': //Close ISP mode
+      Serial.println("Exit ISP");
+      exitISP();
+      Serial.println("OK");
+      return 1;
+      break;
+    case 'I': //Get chip ID
+      if (getChipID())
+      {
+        Serial.println("OK");
+        return TRUE;
+      } else {
+        Serial.println("ERR:Failed to get chip ID");
+        return FALSE;
+      }
+      break;
+    case 'F': 
+      {
+        unsigned char bits = getVal(getch()) << 4;
+        bits |= getVal(getch());
+        
+        Serial.print("Config Device with ");
+        Serial.println(bits, HEX);
+        if (programFuse())
+        {
+          Serial.println("OK");
+          return TRUE;
+        } else {
+          Serial.println("ERR:Failed to config chip");
+          return FALSE;
+        }
+        break;
+      }
+    case 'E':
+      {
+        Serial.println("Erasing chip");
+        if (eraseFlash())
+        {
+          Serial.println("OK");
+          return TRUE;
+        } else {
+          Serial.println("ERR:Failed to erase chip");
+          return FALSE;
+        }
+        break;
+      }
+    case 'P':
+      {
+        unsigned short addr = getVal(getch()) << 12;
+        addr |= getVal(getch()) << 8;
+        addr |= getVal(getch()) << 4;
+        addr |= getVal(getch()) << 2;
 
-         if (len > 0)
-         {
-             Serial.println("Program Flash at: ");
-             Serial.print(addr, HEX);
-             Serial.print(" Len: ");
-             Serial.println(len, HEX);
-             programFlash(addr, len); 
-         } else {
-             Serial.println("Can not flash with no data");
-         }
-         break;
-       }
-       case 'I' :
-       {
-         enterISP();
-         break;
-       }
-       case 'C' :
-       {
-         exitISP();
-         break;
-       }
-     }
+        getch(); //skip space
+
+        unsigned char len = getVal(getch()) << 4;
+        len |= getVal(getch());
+
+        getch(); //skip space
+
+        for (int i = 0; i < len; i++)
+        {
+          unsigned char data = getVal(getch()) << 4;
+          data |= getVal(getch());
+          flashData[i] = data;
+        }
+
+        if (len > 0)
+        {
+          Serial.println("Program Flash at: ");
+          Serial.print(addr, HEX);
+          Serial.print(" Len: ");
+          Serial.println(len, HEX);
+          for(int i =0; i<len; i++)
+            Serial.print(flashData[i],HEX);
+          Serial.println();
+
+          if (programFlash(addr, len))
+          {
+            Serial.println("OK");
+            return TRUE;
+          } else {
+            Serial.println("ERR:Failed to program flash");
+            return FALSE;
+          }
+        } else {
+          Serial.println("ERR: Can not flash with no data");
+          return FALSE;
+        }
+
+        break;
+      }
+    case 'R':
+      {
+        unsigned short startAddr = getVal(getch()) << 12;
+        startAddr |= getVal(getch()) << 8;
+        startAddr |= getVal(getch()) << 4;
+        startAddr |= getVal(getch()) << 2;
+
+        getch(); //skip space
+
+        unsigned short endAddr = getVal(getch()) << 12;
+        endAddr |= getVal(getch()) << 8;
+        endAddr |= getVal(getch()) << 4;
+        endAddr |= getVal(getch()) << 2;
+
+        Serial.println("Reading ");
+        Serial.print(startAddr, HEX);
+        Serial.print(" ");
+        Serial.println(endAddr, HEX);
+        if (readFlash(startAddr, endAddr))
+        {
+          Serial.println("OK");
+          return TRUE;
+        } else {
+          Serial.println("ERR:Failed to readflash");
+          return FALSE;
+        }
+        break;
+      }
+
+    default:
+      Serial.print("Unknown Command ");
+      Serial.println(ch);
   }
 }
 
+
+void loop(void)
+{
+  if (Serial.available())
+    mcuisp();
+}

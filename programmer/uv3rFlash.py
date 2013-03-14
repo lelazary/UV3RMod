@@ -20,6 +20,18 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#Protocol
+#   CMD            Param               Description
+#   S                                  Enter ISP mode
+#   C                                  Exit  ISP mode
+#   I                                  Get Chip ID
+#   F              HH                  Flash config register with hex HH
+#   E                                  Erase flash memory
+#   P              AAAA LL DDDD...     Program memory with starting at address AAAA length LL and data DDDDDD (2char hex code)
+#   R              SSSS EEEE           Read memory from address SSSS to EEEE
+#On success return OK
+#On failure return ERR
+
 """
 Motorola S-Record parser
 - Kudos to Montreal CISSP Groupies
@@ -37,6 +49,8 @@ def __generate_option_parser():
         dest="port", help="Use the arduino on PORT [default: %default]", default="/dev/ttyUSB0")
     parser.add_option("-e", action="store_true",
                       dest="erase", help="Erase chip [default: %default]", default=False)
+    parser.add_option("-d", action="store_true",
+                      dest="debug", help="Show debug information [default: %default]", default=False)
     parser.add_option("-w", action="store", type="string",
                       dest="write", help="Write s-rec FILENAME to Flash memory ")
     parser.add_option("-c", action="store", type="string",
@@ -49,7 +63,6 @@ def __generate_option_parser():
                       dest="verify", help="Verify that the filename VERIFY is in memory")
 
     return parser
-
 
 def enterISP():
   serialPort.write("S"); #Enter ISP mode
@@ -81,8 +94,8 @@ def sendErase():
   serialPort.write("E"); #Enter ISP mode
   #given a 1 sec timeout, wait 10 secods
   for t in xrange(0,10):
-    #if (data.startswith("OK
     data = serialPort.readline(36000);
+    if options.debug: print data
     if data.startswith("OK"):
       return True
     if data.startswith("ERR"):
@@ -99,18 +112,89 @@ def eraseChip(serialPort):
     print "Error"
   exitISP()
 
+def sendConfigBits(bits):
+  serialPort.write("F%s" % bits);
+
+  #given a 1 sec timeout, wait 10 secods
+  for t in xrange(0,10):
+    data = serialPort.readline(36000);
+    if options.debug: print data
+    if data.startswith("OK"):
+      return True
+    if data.startswith("ERR"):
+      return False 
+  return False
 
 def configChip(bits):
   print "Config chip with %s " % bits
+  if enterISP():
+    print "OK"
+  if sendConfigBits(bits):
+    print "OK"
+  else:
+    print "Error"
+  exitISP()
+
+def sendRead(startAddr, endAddr):
+  serialPort.write("R%s %s" % (startAddr,endAddr)); 
+
+  gotData = False
+  #given a 1 sec timeout, wait 10 secods
+  for t in xrange(0,10):
+    data = serialPort.readline(36000);
+    if options.debug: print data
+    if data.startswith("OK"):
+      gotData = True
+      flashData = data
+      break
+    if data.startswith("ERR"):
+      gotData = False
+      break
+
+  if (gotData):
+    print flashData[3:]  #Skip the OK
+  return gotData
 
 def read(address):
   print "Read chip from %s to %s" % (address[0], address[1])
+  if enterISP():
+    print "OK"
+  if sendRead(address[0], address[1]):
+    print "OK"
+  else:
+    print "Error"
+  exitISP()
+
+def sendProgram(addr, data_len, data):
+  if options.debug: print 'Program Addr --%s--%s--%s--\n' % (addr, data_len, data)
+  cmd = "P%s %s %s" % (addr, data_len, data)
+  if options.debug: print 'send:', cmd
+  serialPort.write(cmd); 
+  sentData = False
+  #given a 1 sec timeout, wait 10 secods
+  for t in xrange(0,10):
+    data = serialPort.readline(36000);
+    if options.debug: print data
+    if data.startswith("OK"):
+      sentData = True
+      break
+    elif data.startswith("ERR"):
+      sentData = False
+      break
+  print "SendData: " , sentData
+
+  if sentData:
+    return True
+  else:
+    return False
 
 def write(filename):
   print "Write %s " % filename
   # open input file
   scn_file = open(filename)
   
+  if enterISP():
+    print "OK"
   linecount = 0
   for srec in scn_file:
       # Strip some file content
@@ -137,7 +221,10 @@ def write(filename):
               checksum = srecutils.int_to_padded_hex_byte(int_checksum)
   
               #data = ''.join([record_type, data_len, addr, data, checksum])
-              print 'Program Addr %s %s %s\n' % (addr, data_len, data)
+              plen = int(data_len,16) - 3; #Convert to a number and subtract the addr and length 
+              if (not sendProgram(addr, "%0.2X" % plen, data)): #Subtract the addr and length from len
+                print "Can not program flash"
+                break
   
               data = ''.join([str(linecount), ': ', data])
   
@@ -157,6 +244,7 @@ def write(filename):
       # increment our fancy linecounter
       linecount += 1
   
+  exitISP()
   scn_file.close()
 
 if __name__ == "__main__":
@@ -172,7 +260,7 @@ if __name__ == "__main__":
       configChip(options.config)
     elif options.auto:
       eraseChip(serialPort)
-      configChip("01")
+      configChip("00")
       write(options.auto)
       print "Auto program"
     elif options.write:

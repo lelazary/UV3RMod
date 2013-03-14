@@ -19,6 +19,19 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA 
  */ 
 
+//Protocol
+//   CMD            Param               Description
+//   S                                  Enter ISP mode
+//   C                                  Exit  ISP mode
+//   I                                  Get Chip ID
+//   F              HH                  Flash config register with hex HH
+//   E                                  Erase flash memory
+//   P              AAAA LL DDDD...     Program memory with starting at address AAAA length LL and data DDDDDD (2char hex code)
+//   R              SSSS EEEE           Read memory from address SSSS to EEEE
+//On success return OK
+//On failure return ERR
+
+
 #include <avr/io.h> 
 
 //Programming pin out
@@ -30,6 +43,8 @@
 
 #define FALSE 0
 #define TRUE 1
+
+unsigned char flashData[256]; // global block storage
 
 // the setup routine runs once when you press reset:
 void setup() {                
@@ -44,9 +59,9 @@ void setup() {
   digitalWrite(MC_VPP, HIGH);
   digitalWrite(LED, LOW);   
    
+
 }
 
-unsigned char flashData[256]; // global block storage
 
 unsigned char waitForData()
 {
@@ -327,6 +342,10 @@ unsigned char readFlash(unsigned short startAddr, unsigned short endAddr)
     return FALSE;
   }
 
+  //Set flashData to 0
+  for(int i=0; i<256; i++)
+    flashData[i] = 0;
+
   if (!getChipID())
   {
     Serial.println("Failed to get chip ID");
@@ -346,13 +365,6 @@ unsigned char readFlash(unsigned short startAddr, unsigned short endAddr)
   setMode();
   delay(30);
   
-  Serial.println("Data: "); 
-  for(i=0; i<len; i++)
-  {
-     Serial.print(flashData[i], HEX);
-     Serial.print(" ");
-  }
-  Serial.println();
 
   return TRUE;
 }
@@ -428,7 +440,7 @@ int mcuisp()
         unsigned short addr = getVal(getch()) << 12;
         addr |= getVal(getch()) << 8;
         addr |= getVal(getch()) << 4;
-        addr |= getVal(getch()) << 2;
+        addr |= getVal(getch());
 
         getch(); //skip space
 
@@ -450,10 +462,6 @@ int mcuisp()
           Serial.print(addr, HEX);
           Serial.print(" Len: ");
           Serial.println(len, HEX);
-          for(int i =0; i<len; i++)
-            Serial.print(flashData[i],HEX);
-          Serial.println();
-
           if (programFlash(addr, len))
           {
             Serial.println("OK");
@@ -474,22 +482,31 @@ int mcuisp()
         unsigned short startAddr = getVal(getch()) << 12;
         startAddr |= getVal(getch()) << 8;
         startAddr |= getVal(getch()) << 4;
-        startAddr |= getVal(getch()) << 2;
+        startAddr |= getVal(getch());
 
         getch(); //skip space
 
         unsigned short endAddr = getVal(getch()) << 12;
         endAddr |= getVal(getch()) << 8;
         endAddr |= getVal(getch()) << 4;
-        endAddr |= getVal(getch()) << 2;
+        endAddr |= getVal(getch());
 
         Serial.println("Reading ");
         Serial.print(startAddr, HEX);
         Serial.print(" ");
         Serial.println(endAddr, HEX);
+        unsigned short len = endAddr - startAddr;
+        char format[2];
         if (readFlash(startAddr, endAddr))
         {
-          Serial.println("OK");
+          Serial.print("OK:"); 
+          for(int i=0; i<len; i++)
+          {
+            sprintf(format, "%0.2X", flashData[i]);
+            Serial.print(format);
+          }
+          Serial.println();
+
           return TRUE;
         } else {
           Serial.println("ERR:Failed to readflash");

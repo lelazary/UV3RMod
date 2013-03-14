@@ -26,12 +26,15 @@ Motorola S-Record parser
 """
 
 import sys
+import serial
 import srecutils
 from optparse import OptionParser
 
 def __generate_option_parser():
     usage_str = "usage: %prog [options]"
     parser = OptionParser(usage=usage_str)
+    parser.add_option("-p", action="store", type="string",
+        dest="port", help="Use the arduino on PORT [default: %default]", default="/dev/ttyUSB0")
     parser.add_option("-e", action="store_true",
                       dest="erase", help="Erase chip [default: %default]", default=False)
     parser.add_option("-w", action="store", type="string",
@@ -47,8 +50,55 @@ def __generate_option_parser():
 
     return parser
 
-def eraseChip():
+
+def enterISP():
+  serialPort.write("S"); #Enter ISP mode
+  #given a 1 sec timeout, wait 10 secods
+  for t in xrange(0,10):
+    #if (data.startswith("OK
+    data = serialPort.readline(36000);
+    if data.startswith("OK"):
+      return True
+    if data.startswith("ERR"):
+      return False 
+
+  return False
+
+def exitISP():
+  serialPort.write("C"); #exit ISP mode
+  #given a 1 sec timeout, wait 10 secods
+  for t in xrange(0,10):
+    #if (data.startswith("OK
+    data = serialPort.readline(36000);
+    if data.startswith("OK"):
+      return True
+    if data.startswith("ERR"):
+      return False 
+
+  return False
+
+def sendErase():
+  serialPort.write("E"); #Enter ISP mode
+  #given a 1 sec timeout, wait 10 secods
+  for t in xrange(0,10):
+    #if (data.startswith("OK
+    data = serialPort.readline(36000);
+    if data.startswith("OK"):
+      return True
+    if data.startswith("ERR"):
+      return False 
+  return False
+
+def eraseChip(serialPort):
   print "Erasing chip"
+  if enterISP():
+    print "OK"
+  if sendErase():
+    print "OK"
+  else:
+    print "Error"
+  exitISP()
+
 
 def configChip(bits):
   print "Config chip with %s " % bits
@@ -113,14 +163,15 @@ if __name__ == "__main__":
     parser = __generate_option_parser()
     (options, args) = parser.parse_args(sys.argv)
 
+    serialPort = serial.Serial(port = options.port, baudrate = 19200, timeout = 1)
 
     if options.erase:
-      eraseChip()
+      eraseChip(serialPort)
       #Send command to erase chip
     elif options.config is not None:
       configChip(options.config)
     elif options.auto:
-      eraseChip()
+      eraseChip(serialPort)
       configChip("01")
       write(options.auto)
       print "Auto program"

@@ -224,14 +224,16 @@ def sendBuffer(addr, buff):
   blockSize = 128 
   for i in xrange(0,len(buff),blockSize):
     ret = 0;
-    #while(ret == 0) :
-    ret = sendProgram(
+    #Dont progrm the whole flash memory to save time on programming
+    #Should replace with for in set
+    if (buff[i] != 0xFF or buff[i+blockSize-1] != 0xFF):
+        ret = sendProgram(
           "%0.2X" % (addr+i),
           "%0.2X" % (blockSize),
           binascii.b2a_hex(buff[i:i+blockSize]).upper())
-    if (ret == 0):
-        print "Fail"
-        break
+        if (ret == 0):
+          print "Fail"
+          break
     #print "%s" % binascii.hexlify(buff[i:i+128])
 
   exitISP()
@@ -247,7 +249,7 @@ def getFlashData(filename, startAddr):
 
   #Fill the byte array with default values (recommended ff so we dont exec anything in the chip inevitably)
   for i in xrange(0,endAddr-startAddr+1):
-    programBuff[i] = 0x00
+    programBuff[i] = 0xFF
 
   linecount = 0
   for srec in scn_file:

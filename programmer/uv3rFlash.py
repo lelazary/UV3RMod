@@ -40,6 +40,7 @@ Motorola S-Record parser
 import sys
 import serial
 import srecutils
+import binascii
 from optparse import OptionParser
 
 def __generate_option_parser():
@@ -66,6 +67,19 @@ def __generate_option_parser():
 
 def enterISP():
   serialPort.write("S"); #Enter ISP mode
+  #given a 1 sec timeout, wait 10 secods
+  for t in xrange(0,10):
+    #if (data.startswith("OK
+    data = serialPort.readline(36000);
+    if data.startswith("OK"):
+      return True
+    if data.startswith("ERR"):
+      return False 
+
+  return False
+
+def enterFlashMode():
+  serialPort.write("M"); #Enter ISP mode
   #given a 1 sec timeout, wait 10 secods
   for t in xrange(0,10):
     #if (data.startswith("OK
@@ -136,34 +150,48 @@ def configChip(bits):
   exitISP()
 
 def sendRead(startAddr, endAddr):
-  serialPort.write("R%s %s" % (startAddr,endAddr)); 
+  
+  flashBuff = bytearray(endAddr-startAddr+1); #Array to store the return memory
 
-  gotData = False
-  #given a 1 sec timeout, wait 10 secods
-  for t in xrange(0,10):
-    data = serialPort.readline(36000);
-    if options.debug: print data
-    if data.startswith("OK"):
-      gotData = True
-      flashData = data
-      break
-    if data.startswith("ERR"):
-      gotData = False
-      break
+  for i in xrange(0,endAddr-startAddr+1):
+    flashBuff[i] = 0x00
 
-  if (gotData):
-    print flashData[3:]  #Skip the OK
-  return gotData
+  for addr in (xrange(startAddr,endAddr,256)):
+    end = addr + 255
+    cmd = "R%0.2X %0.2X" % (addr,end)
+    if options.debug: print "Sending: %s" % cmd
+    serialPort.write(cmd)
+    gotData = False
+    #given a 1 sec timeout, wait 10 secods
+    for t in xrange(0,10):
+      data = serialPort.readline(36000);
+      if options.debug: print data
+      if data.startswith("OK"):
+        hData = data[3:len(data)-2]
+        flashBuff[addr-startAddr:end-startAddr] = hData.decode('hex')
+        break
+      if data.startswith("ERR"):
+        return False
+        break
+
+  return flashBuff
 
 def read(address):
   print "Read chip from %s to %s" % (address[0], address[1])
   if enterISP():
     print "OK"
-  if sendRead(address[0], address[1]):
+  if enterFlashMode():
+    print "OK"
+
+  flashBuff = sendRead(int(address[0],16), int(address[1],16))
+  if (flashBuff):
     print "OK"
   else:
     print "Error"
   exitISP()
+
+  for i in xrange(0,256,16):
+    print binascii.hexlify(flashBuff[i:i+16])
 
 def sendProgram(addr, data_len, data):
   if options.debug: print 'Program Addr --%s--%s--%s--\n' % (addr, data_len, data)
@@ -176,25 +204,48 @@ def sendProgram(addr, data_len, data):
     data = serialPort.readline(36000);
     if options.debug: print data
     if data.startswith("OK"):
-      sentData = True
+      return int(data[3:],16)
       break
     elif data.startswith("ERR"):
-      sentData = False
+      return False
       break
-  print "SendData: " , sentData
 
-  if sentData:
-    return True
-  else:
-    return False
+  return False
+
+def sendBuffer(addr, buff):
+
+  exitISP();
+  #Program 128 bytes at a time
+  if enterISP():
+    print "OK"
+
+  if enterFlashMode():
+    print "OK"
+  blockSize = 128 
+  for i in xrange(0,len(buff),blockSize):
+    ret = 0;
+    #while(ret == 0) :
+    ret = sendProgram(
+          "%0.2X" % (addr+i),
+          "%0.2X" % (blockSize),
+          binascii.hexlify(buff[i:i+blockSize]))
+    #print "%s" % binascii.hexlify(buff[i:i+128])
+
+  exitISP()
 
 def write(filename):
   print "Write %s " % filename
   # open input file
   scn_file = open(filename)
   
-  if enterISP():
-    print "OK"
+  startAddr = 0xC000;
+  endAddr = 0xFFFF;
+  programBuff = bytearray(endAddr-startAddr+1); #Array to store 16K of memory, and program it in one shot
+
+  #Fill the byte array with default values (recommended ff so we dont exec anything in the chip inevitably)
+  for i in xrange(0,endAddr-startAddr+1):
+    programBuff[i] = 0xFF
+
   linecount = 0
   for srec in scn_file:
       # Strip some file content
@@ -219,19 +270,26 @@ def write(filename):
               raw_offset_srec = ''.join([record_type, data_len, addr, raw_data])
               int_checksum = srecutils.compute_srec_checksum(raw_offset_srec)
               checksum = srecutils.int_to_padded_hex_byte(int_checksum)
+
+              # output to file
+              print ''.join([str(linecount), ':', data, '\n']),
+
   
               #data = ''.join([record_type, data_len, addr, data, checksum])
-              plen = int(data_len,16) - 3; #Convert to a number and subtract the addr and length 
-              if (not sendProgram(addr, "%0.2X" % plen, data)): #Subtract the addr and length from len
-                print "Can not program flash"
+              plen = int(data_len,16) - 3 #Convert to a number and subtract the addr and length 
+              decAddr = int(addr, 16)
+
+              idx = decAddr-startAddr
+              #Check the the address is in range
+              if (idx < 0 or idx+plen > endAddr):
+                print "ERR: Invalid address given %X" % decAddr
                 break
-  
-              data = ''.join([str(linecount), ': ', data])
-  
-              # output to file
-              print ''.join([data, '\n']),
-  
-  
+              #Set the buffer with the program data
+              print "Addr %X %X" % (decAddr, idx)
+              #Convert the hex byte into in and store in our program memory
+              for i in xrange(0,plen):
+                programBuff[idx+i] = int(data[i*2:(i*2)+2],16)
+
           # All the other record types
           else:
               output_str = ' No Action '.join([srec, '\n'])
@@ -244,14 +302,15 @@ def write(filename):
       # increment our fancy linecounter
       linecount += 1
   
-  exitISP()
   scn_file.close()
 
+  #Send the program to the chip
+  sendBuffer(startAddr, programBuff)
 if __name__ == "__main__":
     parser = __generate_option_parser()
     (options, args) = parser.parse_args(sys.argv)
 
-    serialPort = serial.Serial(port = options.port, baudrate = 19200, timeout = 1)
+    serialPort = serial.Serial(port = options.port, baudrate = 19200, timeout = 0.2)
 
     if options.erase:
       eraseChip(serialPort)

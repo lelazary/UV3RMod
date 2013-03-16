@@ -285,7 +285,7 @@ unsigned char programFuse()
   return TRUE;
 }
 
-unsigned char programFlash(unsigned short addr, unsigned char len)
+unsigned char enterProgramMode()
 {
   if (!getChipID())
   {
@@ -295,9 +295,13 @@ unsigned char programFlash(unsigned short addr, unsigned char len)
   delay(30);
   setMode();
   delay(30);
-  
+
+  return TRUE;
+}
+
+unsigned char programFlash(unsigned short addr, unsigned char len)
+{
   setFlashAddr(addr, len);
-  
   
   int i=0; 
   for(i=0; i<len; i++)
@@ -306,13 +310,13 @@ unsigned char programFlash(unsigned short addr, unsigned char len)
     delayMicroseconds(100);
   }
   
-    //Read chip ID
-  delay(1); //waitForData();
+  //delay(1); //waitForData();
+  waitForData();
   unsigned char val = spiRX();
   Serial.print("Program result: ");
   Serial.println(val, HEX);
  
-  return TRUE;
+  return val;
 }
 
 void setReadRange(unsigned short startAddr, unsigned short endAddr)
@@ -346,15 +350,6 @@ unsigned char readFlash(unsigned short startAddr, unsigned short endAddr)
   for(int i=0; i<256; i++)
     flashData[i] = 0;
 
-  if (!getChipID())
-  {
-    Serial.println("Failed to get chip ID");
-    return FALSE;
-  }
-  delay(30);
-  setMode();
-  delay(30);
-  
   setReadRange(startAddr, endAddr);
   
   waitForData();
@@ -435,6 +430,18 @@ int mcuisp()
         }
         break;
       }
+    case 'M':
+      {
+        Serial.println("Enter Program Mode");
+        if (enterProgramMode())
+        {
+          Serial.println("OK");
+          return TRUE;
+        } else {
+          Serial.println("ERR:Failed to enter program mode");
+          return FALSE;
+        }
+      }
     case 'P':
       {
         unsigned short addr = getVal(getch()) << 12;
@@ -462,9 +469,11 @@ int mcuisp()
           Serial.print(addr, HEX);
           Serial.print(" Len: ");
           Serial.println(len, HEX);
-          if (programFlash(addr, len))
+          unsigned char val = programFlash(addr, len);
+          if (val)
           {
-            Serial.println("OK");
+            Serial.print("OK:");
+            Serial.println(val, HEX);
             return TRUE;
           } else {
             Serial.println("ERR:Failed to program flash");

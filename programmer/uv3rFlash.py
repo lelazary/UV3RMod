@@ -179,8 +179,8 @@ def sendRead(startAddr, endAddr):
 
 def read(startAddr, endAddr):
   print "Read chip from %s to %s" % (startAddr, endAddr)
-  #if enterISP():
-  #  print "OK"
+  if enterISP():
+    print "OK"
   if enterFlashMode():
     print "OK"
 

@@ -265,16 +265,6 @@ void setRegister()
 
 void setFlashAddr(unsigned short addr, unsigned char len)
 {
-  
- // unsigned char data[] =
- // { 0x55, 0xAA, 0x5A, 0xA5, 0x80, 0xC0, 0x00, 0x00 };
- // 
- //  data[4] = len;
- //  data[5] = (addr >> 8) & 0xFF;
- //  data[6] = addr & 0xFF;
- //  
- //  sendData(data, 8);
-
   unsigned char addrU = (addr >> 8) & 0xFF;
   unsigned char addrL = addr & 0xFF;
   chipSetup();
@@ -404,6 +394,7 @@ unsigned char programFlash(unsigned short addr, unsigned char len)
 
 void setReadRange(unsigned short startAddr, unsigned short endAddr)
 {
+/*
   unsigned char data[] =
   { 0x55, 0xAA, 0x5A, 0xA5, 0x05, 0x00, 0x00, 0x04 ,
    0xC0, 0x00,
@@ -414,7 +405,50 @@ void setReadRange(unsigned short startAddr, unsigned short endAddr)
    data[10] = (endAddr >> 8) & 0xFF;
    data[11] = endAddr & 0xFF;
    sendData(data, 13);
-   
+  */
+ 
+   unsigned char startAddrU = (startAddr >> 8) & 0xFF;
+   unsigned char startAddrL = startAddr & 0xFF;
+   unsigned char endAddrU = (endAddr >> 8) & 0xFF;
+   unsigned char endAddrL = endAddr & 0xFF;
+   chipSetup();
+
+   spiTX(05);
+   delayMicroseconds(40);
+   waitForData();
+
+   spiTX(0x00);
+   delayMicroseconds(40);
+   waitForData();
+
+   spiTX(0x00);
+   delayMicroseconds(40);
+   waitForData();
+
+   spiTX(0x04);
+   delayMicroseconds(40);
+   waitForData();
+
+   spiTX(startAddrU);
+   delayMicroseconds(40);
+   waitForData();
+
+   spiTX(startAddrL);
+   delayMicroseconds(40);
+   waitForData();
+
+   spiTX(endAddrU);
+   delayMicroseconds(40);
+   waitForData();
+
+   spiTX(endAddrL);
+   delayMicroseconds(40);
+   waitForData();
+
+   spiTX(0x00);
+   delayMicroseconds(40);
+   waitForData();
+
 }
 
 
@@ -435,13 +469,14 @@ unsigned char readFlash(unsigned short startAddr, unsigned short endAddr)
 
   setReadRange(startAddr, endAddr);
   
-  waitForData();
+  //waitForData();
+  delay(1);
   
   for(i=0; i<len; i++)
     flashData[i] = spiRX();
   
   setMode();
-  delay(30);
+  //delay(30);
   
 
   return TRUE;

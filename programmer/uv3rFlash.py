@@ -204,7 +204,7 @@ def sendProgram(addr, data_len, data):
     data = serialPort.readline(36000);
     if options.debug: print data
     if data.startswith("OK"):
-      return int(data[3:],16)
+      return True #int(data[3:],16)
       break
     elif data.startswith("ERR"):
       return False
@@ -228,10 +228,10 @@ def sendBuffer(addr, buff):
     ret = sendProgram(
           "%0.2X" % (addr+i),
           "%0.2X" % (blockSize),
-          binascii.hexlify(buff[i:i+blockSize]))
+          binascii.b2a_hex(buff[i:i+blockSize]).upper())
     if (ret == 0):
         print "Fail"
-        return False
+        break
     #print "%s" % binascii.hexlify(buff[i:i+128])
 
   exitISP()

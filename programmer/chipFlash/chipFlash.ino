@@ -70,7 +70,7 @@ unsigned char waitForData()
   int i;
   pinMode(MC_SDA, INPUT);
   
-  for(i=0; i<3000; i++)
+  for(i=0; i<30000; i++)
   {
     if (!digitalRead(MC_SDA)) //Wait until we get a response
     {
@@ -79,6 +79,8 @@ unsigned char waitForData()
     }
     delayMicroseconds(100);
   }  
+  pinMode(MC_SDA, OUTPUT);
+  digitalWrite(MC_SDA, HIGH);
   
   return gotData;
 }
@@ -171,8 +173,8 @@ void chipSetup()
 {
   spiTX(0x55);
   delayMicroseconds(40);
-
   waitForData();
+  
   spiTX(0xAA);
   delayMicroseconds(40);
   spiTX(0x5A);
@@ -202,6 +204,7 @@ unsigned char modeSetup(unsigned char mode)
   spiTX(mode);
   delayMicroseconds(40);
   waitForData();
+  digitalWrite(MC_SDA, LOW);
   delay(1);
   
   unsigned char val = spiRX();
@@ -210,15 +213,14 @@ unsigned char modeSetup(unsigned char mode)
   
 }
 
-
 unsigned char getChipID()
 {
   chipSetup();
   unsigned char val = modeSetup(0x00); 
   
   
-  Serial.print("Chip id: ");
-  Serial.println(val, HEX);
+  //Serial.print("Chip id: ");
+  //Serial.println(val, HEX);
   
   if (val == 0x82)
     return TRUE; //Success
@@ -242,8 +244,8 @@ void setMode()
   chipSetup();
   unsigned char val = modeSetup(0x08); 
   
-  Serial.print("Mode: ");
-  Serial.println(val, HEX);
+  //Serial.print("Mode2: ");
+  //Serial.println(val, HEX);
   //Return 1
 }
 
@@ -264,16 +266,35 @@ void setRegister()
 void setFlashAddr(unsigned short addr, unsigned char len)
 {
   
-  unsigned char data[] =
-  { 0x55, 0xAA, 0x5A, 0xA5, 0x80, 0xC0, 0x00, 0x00 };
-  
-   data[4] = len;
-   data[5] = (addr >> 8) & 0xFF;
-   data[6] = addr & 0xFF;
-   
-   sendData(data, 8);
+ // unsigned char data[] =
+ // { 0x55, 0xAA, 0x5A, 0xA5, 0x80, 0xC0, 0x00, 0x00 };
+ // 
+ //  data[4] = len;
+ //  data[5] = (addr >> 8) & 0xFF;
+ //  data[6] = addr & 0xFF;
+ //  
+ //  sendData(data, 8);
 
-   
+  unsigned char addrU = (addr >> 8) & 0xFF;
+  unsigned char addrL = addr & 0xFF;
+  chipSetup();
+
+  spiTX(len);
+  delayMicroseconds(40);
+  waitForData();
+  
+  spiTX(addrU);
+  delayMicroseconds(40);
+  waitForData();
+  
+  spiTX(addrL);
+  delayMicroseconds(40);
+  waitForData();
+  
+  spiTX(0x00);
+  delayMicroseconds(40);
+  waitForData();
+  
 }
 
 void setEraseMode()
@@ -342,10 +363,9 @@ unsigned char enterProgramMode()
     Serial.println("Failed to get chip ID");
     return FALSE;
   }
-  delay(30);
+  delay(15);
   setMode();
-  delay(30);
-
+  
   return TRUE;
 }
 
@@ -360,6 +380,9 @@ unsigned char programFlash(unsigned short addr, unsigned char len)
     delayMicroseconds(40);
     waitForData();
   }
+  digitalWrite(MC_SDA, HIGH);
+  delay(1);
+  
   
   pinMode(MC_SDA, INPUT);
 
@@ -492,15 +515,18 @@ int mcuisp()
       }
     case 'M':
       {
-        Serial.println("Enter Program Mode");
-        if (enterProgramMode())
-        {
-          Serial.println("OK");
-          return TRUE;
-        } else {
-          Serial.println("ERR:Failed to enter program mode");
-          return FALSE;
-        }
+        //Serial.println("Enter Program Mode");
+        enterProgramMode();
+        Serial.println("OK");
+        //if (enterProgramMode())
+        //{
+        //  Serial.println("OK");
+        //  return TRUE;
+        //} else {
+        //  Serial.println("ERR:Failed to enter program mode");
+        //  return FALSE;
+        //}
+	return TRUE;
       }
     case 'P':
       {
@@ -525,7 +551,7 @@ int mcuisp()
 
         if (len > 0)
         {
-          Serial.println("Program Flash at: ");
+          Serial.print("Program Flash at: ");
           Serial.print(addr, HEX);
           Serial.print(" Len: ");
           Serial.println(len, HEX);

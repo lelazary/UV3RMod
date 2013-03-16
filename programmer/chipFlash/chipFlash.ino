@@ -48,7 +48,7 @@ unsigned char flashData[256]; // global block storage
 
 // the setup routine runs once when you press reset:
 void setup() {                
-  Serial.begin(19200);  
+  Serial.begin(38400);  
 
   // initialize the digital pin as an output.
   pinMode(MC_SCK, OUTPUT);   

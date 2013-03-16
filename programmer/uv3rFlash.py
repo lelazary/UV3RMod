@@ -107,7 +107,7 @@ def exitISP():
 def sendErase():
   serialPort.write("E"); #Enter ISP mode
   #given a 1 sec timeout, wait 10 secods
-  for t in xrange(0,10):
+  for t in xrange(0,100):
     data = serialPort.readline(36000);
     if options.debug: print data
     if data.startswith("OK"):
@@ -176,22 +176,21 @@ def sendRead(startAddr, endAddr):
 
   return flashBuff
 
-def read(address):
-  print "Read chip from %s to %s" % (address[0], address[1])
+def read(startAddr, endAddr):
+  print "Read chip from %s to %s" % (startAddr, endAddr)
   if enterISP():
     print "OK"
   if enterFlashMode():
     print "OK"
 
-  flashBuff = sendRead(int(address[0],16), int(address[1],16))
+  flashBuff = sendRead(int(startAddr,16), int(endAddr,16))
   if (flashBuff):
     print "OK"
   else:
     print "Error"
   exitISP()
 
-  for i in xrange(0,256,16):
-    print binascii.hexlify(flashBuff[i:i+16])
+  return flashBuff
 
 def sendProgram(addr, data_len, data):
   if options.debug: print 'Program Addr --%s--%s--%s--\n' % (addr, data_len, data)
@@ -233,18 +232,18 @@ def sendBuffer(addr, buff):
 
   exitISP()
 
-def write(filename):
+def getFlashData(filename, startAddr):
+
   print "Write %s " % filename
   # open input file
   scn_file = open(filename)
   
-  startAddr = 0xC000;
   endAddr = 0xFFFF;
   programBuff = bytearray(endAddr-startAddr+1); #Array to store 16K of memory, and program it in one shot
 
   #Fill the byte array with default values (recommended ff so we dont exec anything in the chip inevitably)
   for i in xrange(0,endAddr-startAddr+1):
-    programBuff[i] = 0xFF
+    programBuff[i] = 0x00
 
   linecount = 0
   for srec in scn_file:
@@ -304,14 +303,14 @@ def write(filename):
   
   scn_file.close()
 
-  #Send the program to the chip
-  sendBuffer(startAddr, programBuff)
+  return programBuff
 if __name__ == "__main__":
     parser = __generate_option_parser()
     (options, args) = parser.parse_args(sys.argv)
 
-    serialPort = serial.Serial(port = options.port, baudrate = 19200, timeout = 0.2)
+    serialPort = serial.Serial(port = options.port, baudrate = 38400, timeout = 0.2)
 
+    exitISP(); #Just incase we stopped before closing
     if options.erase:
       eraseChip(serialPort)
       #Send command to erase chip
@@ -320,12 +319,29 @@ if __name__ == "__main__":
     elif options.auto:
       eraseChip(serialPort)
       configChip("00")
-      write(options.auto)
       print "Auto program"
     elif options.write:
-      write(options.write)
+      startAddr = 0xC000; #The start of the chip program memory
+      programBuff = getFlashData(options.write, startAddr)
+      if (programBuff):
+        #Send the program to the chip
+        sendBuffer(startAddr, programBuff)
     elif options.read:
-      read(options.read)
+      flashBuff = read(options.read[0], options.read[1])
+
+      if (flashBuff):
+        for i in xrange(0,len(flashBuff),16):
+          print binascii.hexlify(flashBuff[i:i+16])
+    elif options.verify:
+      startAddr = 0xC000; #The start of the chip program memory
+      programBuff = getFlashData(options.verify, startAddr)
+      flashBuff = read("C000", "CFFF")
+
+      for i in xrange(0,len(flashBuff),16):
+        print "Chip:%s" % binascii.hexlify(flashBuff[i:i+16])
+        print "File:%s" % binascii.hexlify(programBuff[i:i+16])
+        print
+
     else:
       parser.print_help()
       sys.exit()

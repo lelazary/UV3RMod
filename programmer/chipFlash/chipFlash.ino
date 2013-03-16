@@ -56,6 +56,7 @@ void setup() {
   pinMode(MC_VPP, OUTPUT);   
   pinMode(LED, OUTPUT);   
   digitalWrite(MC_SCK, LOW);
+  digitalWrite(MC_SDA, LOW);
   digitalWrite(MC_VPP, HIGH);
   digitalWrite(LED, LOW);   
    
@@ -96,11 +97,11 @@ void spiTX(unsigned char data)
       
     //Clock the data
     digitalWrite(MC_SCK, LOW);
-    delayMicroseconds(4);
+    //delayMicroseconds(4);
   
     //Set data/read
     digitalWrite(MC_SCK, HIGH);
-    delayMicroseconds(8);
+    //delayMicroseconds(8);
     
     data >>= 1; //next bit
   }
@@ -111,6 +112,7 @@ unsigned char spiRX()
 {
   unsigned char data;
   pinMode(MC_SDA, INPUT);
+
   int counter;
   for(counter=0; counter<8  ; counter++)
   {
@@ -124,7 +126,8 @@ unsigned char spiRX()
     delayMicroseconds(8);
        
   }
-  pinMode(MC_SDA, OUTPUT);
+  
+  pinMode(MC_SCK, OUTPUT);
   digitalWrite(MC_SDA, HIGH);
   return data;
 }
@@ -154,7 +157,8 @@ void sendData(unsigned char* data, int length)
   for(i=0; i<length; i++)
   {
     spiTX(data[i]);  //10101010
-    delayMicroseconds(100);
+    delayMicroseconds(40);
+    waitForData();
   }
 }
 
@@ -163,21 +167,59 @@ uint8_t getch() {
   return Serial.read();
 }
 
+void chipSetup()
+{
+  spiTX(0x55);
+  delayMicroseconds(40);
+
+  waitForData();
+  spiTX(0xAA);
+  delayMicroseconds(40);
+  spiTX(0x5A);
+  delayMicroseconds(40);
+  spiTX(0xA5);
+  delayMicroseconds(40); 
+}
+
+unsigned char modeSetup(unsigned char mode)
+{
+  spiTX(0x01);
+  delayMicroseconds(40);
+  waitForData();
+  
+  spiTX(0x00);
+  delayMicroseconds(40);
+  waitForData();
+  
+  spiTX(0x00);
+  delayMicroseconds(40);
+  waitForData();
+  
+  spiTX(0x05);
+  delayMicroseconds(40);
+  waitForData();
+  
+  spiTX(mode);
+  delayMicroseconds(40);
+  waitForData();
+  delay(1);
+  
+  unsigned char val = spiRX();
+  
+  return val;
+  
+}
 
 
 unsigned char getChipID()
 {
+  chipSetup();
+  unsigned char val = modeSetup(0x00); 
   
-  unsigned char data[] =
-  { 0x55, 0xAA, 0x5A, 0xA5, 0x01, 0x00, 0x00, 0x05 , 0x00};
-  sendData(data, 9);
-
-  delay(1); //waitForData();
-
-  unsigned char val = spiRX();
+  
   Serial.print("Chip id: ");
   Serial.println(val, HEX);
-
+  
   if (val == 0x82)
     return TRUE; //Success
   else
@@ -187,15 +229,22 @@ unsigned char getChipID()
 
 void setMode()
 {
-  unsigned char data[] =
-  { 0x55, 0xAA, 0x5A, 0xA5, 0x01, 0x00, 0x00, 0x05 , 0x08};
-  sendData(data, 9);
+  //unsigned char data[] =
+  //{ 0x55, 0xAA, 0x5A, 0xA5, 0x01, 0x00, 0x00, 0x05 , 0x08};
+  //sendData(data, 9);
 
   //Read chip ID
-  delay(1); //waitForData();
-  unsigned char val = spiRX();
+  //delay(1); //waitForData();
+  //unsigned char val = spiRX();
+  //Serial.print("Mode: ");
+  //Serial.println(val, HEX);
+  
+  chipSetup();
+  unsigned char val = modeSetup(0x08); 
+  
   Serial.print("Mode: ");
   Serial.println(val, HEX);
+  //Return 1
 }
 
 void setRegister()
@@ -214,6 +263,7 @@ void setRegister()
 
 void setFlashAddr(unsigned short addr, unsigned char len)
 {
+  
   unsigned char data[] =
   { 0x55, 0xAA, 0x5A, 0xA5, 0x80, 0xC0, 0x00, 0x00 };
   
@@ -221,9 +271,9 @@ void setFlashAddr(unsigned short addr, unsigned char len)
    data[5] = (addr >> 8) & 0xFF;
    data[6] = addr & 0xFF;
    
-  sendData(data, 8);
+   sendData(data, 8);
 
-
+   
 }
 
 void setEraseMode()
@@ -307,11 +357,21 @@ unsigned char programFlash(unsigned short addr, unsigned char len)
   for(i=0; i<len; i++)
   {
     spiTX(flashData[i]);  
-    delayMicroseconds(100);
+    delayMicroseconds(40);
+    waitForData();
   }
   
-  //delay(1); //waitForData();
-  waitForData();
+  pinMode(MC_SDA, INPUT);
+
+  //Wait for data to go low and the high again  
+  for(i=0; i<30000; i++)
+    if (digitalRead(MC_SDA)) //Wait until we get a response
+      break;
+  for(i=0; i<30000; i++)
+    if (!digitalRead(MC_SDA)) //Wait until we get a response
+      break;
+  
+  
   unsigned char val = spiRX();
   Serial.print("Program result: ");
   Serial.println(val, HEX);

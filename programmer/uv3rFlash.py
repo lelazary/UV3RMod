@@ -84,6 +84,7 @@ def enterFlashMode():
   for t in xrange(0,10):
     #if (data.startswith("OK
     data = serialPort.readline(36000);
+    if options.debug: print data
     if data.startswith("OK"):
       return True
     if data.startswith("ERR"):
@@ -108,7 +109,7 @@ def sendErase():
   serialPort.write("E"); #Enter ISP mode
   #given a 1 sec timeout, wait 10 secods
   for t in xrange(0,100):
-    data = serialPort.readline(36000);
+    data = serialPort.readline(36000)
     if options.debug: print data
     if data.startswith("OK"):
       return True
@@ -178,8 +179,8 @@ def sendRead(startAddr, endAddr):
 
 def read(startAddr, endAddr):
   print "Read chip from %s to %s" % (startAddr, endAddr)
-  if enterISP():
-    print "OK"
+  #if enterISP():
+  #  print "OK"
   if enterFlashMode():
     print "OK"
 
@@ -228,6 +229,9 @@ def sendBuffer(addr, buff):
           "%0.2X" % (addr+i),
           "%0.2X" % (blockSize),
           binascii.hexlify(buff[i:i+blockSize]))
+    if (ret == 0):
+        print "Fail"
+        return False
     #print "%s" % binascii.hexlify(buff[i:i+128])
 
   exitISP()
@@ -335,12 +339,12 @@ if __name__ == "__main__":
     elif options.verify:
       startAddr = 0xC000; #The start of the chip program memory
       programBuff = getFlashData(options.verify, startAddr)
-      flashBuff = read("C000", "CFFF")
+      flashBuff = read("C000", "FFFF")
 
-      for i in xrange(0,len(flashBuff),16):
+      for i in xrange(0,len(programBuff),16):
         print "Chip:%s" % binascii.hexlify(flashBuff[i:i+16])
-        print "File:%s" % binascii.hexlify(programBuff[i:i+16])
-        print
+        #print "File:%X %s" % (startAddr+i, binascii.hexlify(programBuff[i:i+16]))
+        #print
 
     else:
       parser.print_help()

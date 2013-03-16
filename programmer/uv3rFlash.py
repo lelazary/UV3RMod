@@ -342,9 +342,15 @@ if __name__ == "__main__":
       flashBuff = read("C000", "FFFF")
 
       for i in xrange(0,len(programBuff),16):
-        print "Chip:%s" % binascii.hexlify(flashBuff[i:i+16])
-        #print "File:%X %s" % (startAddr+i, binascii.hexlify(programBuff[i:i+16]))
-        #print
+	chipMem = binascii.hexlify(flashBuff[i:i+16])
+	fileMem = binascii.hexlify(programBuff[i:i+16])
+
+        print "Chip:%X %s" % (startAddr+i, binascii.hexlify(flashBuff[i:i+16]))
+        print "File:%X %s" % (startAddr+i, binascii.hexlify(programBuff[i:i+16]))
+	if (chipMem != fileMem):
+	  print "Fail"
+        else:
+	  print "OK"
 
     else:
       parser.print_help()

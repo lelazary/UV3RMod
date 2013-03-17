@@ -24,8 +24,7 @@
 #ifndef SPI_H
 #define SPI_H
 
-unsigned short SPITransfer(unsigned char address, short data);
-
+unsigned short SPI(unsigned char address, short data);
 
 #endif
 

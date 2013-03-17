@@ -82,6 +82,14 @@ struct RDAFormat RDAinit[30] = {
 
 void initRDA1846();
 
+short getRSSI();
+unsigned char getDTMF();
+void txDTMF(unsigned char* values, unsigned int len, unsigned short delay);
+void setFreq(unsigned short freqU, unsigned short freqL);
+void tx();
+void rx(unsigned char useSq);
+void setPower(unsigned char power);
+
 #endif
 
 

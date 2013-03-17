@@ -324,13 +324,18 @@ if __name__ == "__main__":
       configChip(options.config)
     elif options.auto:
       eraseChip(serialPort)
-      configChip("00")
+      configChip("01")
       print "Auto program"
+      startAddr = 0xC000; #The start of the chip program memory
+      programBuff = getFlashData(options.auto, startAddr)
+      #Send the program to the chip
+      if (programBuff):
+        sendBuffer(startAddr, programBuff)
     elif options.write:
       startAddr = 0xC000; #The start of the chip program memory
       programBuff = getFlashData(options.write, startAddr)
+      #Send the program to the chip
       if (programBuff):
-        #Send the program to the chip
         sendBuffer(startAddr, programBuff)
     elif options.read:
       flashBuff = read(options.read[0], options.read[1])
@@ -344,16 +349,14 @@ if __name__ == "__main__":
       flashBuff = read("C000", "FFFF")
 
       for i in xrange(0,len(programBuff),16):
-	chipMem = binascii.hexlify(flashBuff[i:i+16])
-	fileMem = binascii.hexlify(programBuff[i:i+16])
-
+        chipMem = binascii.hexlify(flashBuff[i:i+16])
+        fileMem = binascii.hexlify(programBuff[i:i+16])
         print "Chip:%X %s" % (startAddr+i, binascii.hexlify(flashBuff[i:i+16]))
         print "File:%X %s" % (startAddr+i, binascii.hexlify(programBuff[i:i+16]))
-	if (chipMem != fileMem):
-	  print "Fail"
-        else:
-	  print "OK"
-
+	      #if (chipMem != fileMem):
+	      #  print "Fail"
+        #else:
+	      #  print "OK"
     else:
       parser.print_help()
       sys.exit()

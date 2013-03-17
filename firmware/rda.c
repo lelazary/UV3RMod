@@ -31,6 +31,66 @@ void initRDA1846()
   RDA1846_SCK = 1;
   for(i=0; i<30; i++)
   {
-    SPITransfer(RDAinit[i].address, RDAinit[i].data);
+    SPI(RDAinit[i].address, RDAinit[i].data);
   }
+}
+
+//Get the signal stength indications
+short getRSSI()
+{
+  short val = SPI(0x5F | 0x80, 0x0000) & 0x03FF;
+
+  val >>= 3; //devide by 8
+  val -= 135; //Per datasheet
+  return val;
+}
+
+unsigned char getDTMF()
+{
+  return 0;
+}
+
+void txDTMF(unsigned char* values, unsigned int len, unsigned short delay)
+{
+  int i=0;
+  //Set tx mode
+  SPI(0x1F, 0xC0);
+  SPI(0x63, 0x01F0 ); //00000001 00010001
+  SPI(0x30, 0x3046); //TX
+  
+  for(i=0; i<len; i++)
+  {
+    //Get data from dtmf table
+    SPI(0x35, 2855); 
+    SPI(0x36, 6049); 
+    msDelay(delay);
+  }
+
+  //Switch back to RX mode
+  SPI(0x30, 0x302E); //RX
+  SPI(0x1F, 0x00);
+}
+
+void setFreq(unsigned short freqU, unsigned short freqL)
+{
+    SPI(0x29, freqU);
+    SPI(0x2A, freqL);
+}
+
+void tx()
+{
+  SPI(0x30, 0x3046); //TX
+}
+
+void rx(unsigned char useSq)
+{
+  if (useSq)
+    SPI(0x30, 0x302E); //2E RX
+  else
+    SPI(0x30, 0x3026); //2E RX
+}
+
+void setPower(unsigned char power)
+{
+
 }

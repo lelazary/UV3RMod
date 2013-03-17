@@ -13,6 +13,9 @@ uv3r_firmware: $(OBJS)
 %.o: %.c
 	$(CC) -ramclr -mshort -Os -g -Wa,"-mhms800"  --option-file="C:\\HMS800C\\options\\MC81F8816.opt" -Wa,"-ahls=lcd.lst" -c -o $*.o $<
 
-flash:
-	../programmer/uv3rFlash.py -d -e
-	../programmer/uv3rFlash.py -d -w uv3r_firmware.hex
+flash: uv3r_firmware
+	../programmer/uv3rFlash.py -d -a uv3r_firmware.hex
+
+clean:
+	rm uv3r_firmware.hex *.o
+

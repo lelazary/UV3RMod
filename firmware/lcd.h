@@ -23,7 +23,7 @@
 #define LCD_H
 
 
-void lcdSetSymbol(unsigned char sym);
+void lcdSetSymbol(unsigned char sym, unsigned char lower);
 void lcdSetLevel(unsigned char level);
 void lcdSetFrac(unsigned char frac);
 void lcdSmallNumber(unsigned char num);

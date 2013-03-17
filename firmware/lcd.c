@@ -90,7 +90,7 @@ CODE unsigned char alphaNumFont[][4] =
 0x01, 0x48, 0xBA, 0x00,   //  Lower: Z  0001 1000 1010 0000 Upper: Z  0000 0100 1011 0000
 };
 
-void lcdSetSymbol(unsigned char sym)
+void lcdSetSymbol(unsigned char sym, unsigned char lower)
 {
 
 }

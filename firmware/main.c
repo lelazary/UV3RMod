@@ -29,44 +29,24 @@
 unsigned char	selfBias;		//
 unsigned char	i;
 
-#define  	ADC_0		0x00           	// AN0	 
-#define  	ADC_1		0x04           	// AN1	 
-#define  	ADC_2		0x08          	// AN2	 
-#define  	ADC_3		0x0C         	// AN3	  
-#define  	ADC_4		0x10           	// AN4	 
-#define  	ADC_5		0x14           	// AN5	 
-#define  	ADC_BIAS	0x3C           	// AN15	 
-
-unsigned char readADC(unsigned char ADC_CH)			// 8bit ADC read 
+//If we need the memory, we can start stuffing some bits together 
+struct radioSettings
 {
-  unsigned char k;				//
+  short trFreqM; //The transmit mega portion of the freq (BCD)
+  short trFreqK; //The transmit kilo portion of the freq (BCD)
+  short rxFreqM; //The recive mega portion of the freq (BCD)
+  short rxFreqK; //The recive kilo portion of the freq (BCD)
 
-  ADCRH  = 0x60;				// set 8bit ADC mode   
-  ADCM   = ADC_CH + 0x82;			// conversion start		 			               	 
-  for(k=0;k<0xFF;k++)			//
-  {	if(ADSF) break;			//
-  }						//
-  return	ADCRL;			// return 8 bit data 
-}							//
-
-
-void getSelfBias(void)
-{
-
-  i	= readADC(ADC_BIAS);		// ADC_15 
-
-  asm("	ldx	_i				;
-      lda	#0CAh				; 3280 
-      ldy	#0Ch				;
-      div					;
-      sta	_selfBias			;
-      ");						//
-
-}
-
-
-
-long freq = 0xFFFF;
+  unsigned char contrast;
+  unsigned char power;
+  unsigned char volume;
+  unsigned char ctcss;
+  unsigned char sqOpen;
+  unsigned char sqClose;
+  unsigned char txDTMF[4]; //8 diffrent dtmf transmitions
+  unsigned char txFMDev;
+  unsigned char options; //lpf,hpf,emp
+};
 
 int main()
 {
@@ -77,94 +57,50 @@ int main()
 
   msDelay(100);
   getSelfBias();
-  lcdInit(47); //Adjust this for LCD contrast
+  lcdInit(42); //Adjust this for LCD contrast
 
 
   unsigned char reg = 0;
   unsigned short b = '/';
   unsigned char pos = 0;
 
-  R11 = 1; //Turn on back light
+  LCD_BACKLIGHT = 1;
+  lcdClear();
   lcdShowStr("HACKED",6);
-  lcdShowStr(" UV3R ",0);
+  lcdShowStr("VER",0);
+  lcdSetSymbol('.',0); //Lower period
+  lcdShowStr("001",3);
   msDelay(2000); //Show startup screen for 2 seconds
+
   short encoderPos = 0;
 
   //Initial RDA settings
-  initRDA1846();
+  //initRDA1846();
 
   lcdClear();
 
   while(1)
   {
-    R11 = 1; //Turn on back light
     int k=0; 
-    lcdShowStr("145525",6);
-
-    //BUZR  = val++; 
-    //Read from R23
-
-    unsigned short val = SPITransfer(0x5F | 0x80, 0x0000);
-    lcdShowNum(val & 0x03FF, 11, 16); //Show the results
-
-    if (val > 0x0200) //We have a strong signal, send the DTMF tones
-    {
-      msDelay(2000);
-      lcdShowStr("DTMF", 0);
-      msDelay(2000);
-      lcdShowStr("TX ON", 0);
-      SPITransfer(0x1F, 0xC0);
-      SPITransfer(0x63, 0x01F0 ); //00000001 00010001
-      SPITransfer(0x30, 0x3046); //TX
-      SPITransfer(0x35, 2855); 
-      SPITransfer(0x36, 6049); 
-      msDelay(1000);
-      SPITransfer(0x35, 3154); 
-      SPITransfer(0x36, 4952); 
-      msDelay(1000);
-      SPITransfer(0x35, 2855); 
-      SPITransfer(0x36, 4952);
-      msDelay(1000);
-      SPITransfer(0x30, 0x302E); //RX
-      SPITransfer(0x1F, 0x00);
-      lcdShowStr("TX OFF", 0);
-      for(k=0; k<10; k++)
-        for(i=0; i<10000; i++)
-          WDTR	= 0x9F;
-      lcdClear();
-    }
-    else
-    {
-      lcdShowStr("WAIT", 0);
-    }
-
 
     char encoderDir = getDialEncoder();
+    unsigned char keys = getKeys();
+    if (keys)
+    {
+      lcdShowNum(keys, 11, 16);
+    }
     if (encoderDir)
     {
       encoderPos += encoderDir;
       lcdClear();
       lcdShowNum(encoderPos, 5, 10);
-      switch(encoderPos)
-      {
-        case 1:
-          SPITransfer(0x30, 0x302E); //2E RX
-          SPK_EN = 1;
-          break;
-        case 2:
-          SPITransfer(0x30, 0x3046); //TX
-          break;
-        default:
-          SPITransfer(0x30, 0x3006); //Stop eveything
-          break;
-      }
-
     }
 
     //unsigned char val = readADC(ADC_1); //Read the battery level
     WDTR	= 0x9F;
   }
 
+  return 0;
 }
 
 

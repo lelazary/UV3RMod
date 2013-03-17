@@ -25,7 +25,7 @@
 #include <hms800.h>
 #include "uv3r.h"
 
-unsigned short SPITransfer(unsigned char address, short data)
+unsigned short SPI(unsigned char address, short data)
 {
   unsigned char counter;
   int i;

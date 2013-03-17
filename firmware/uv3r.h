@@ -24,9 +24,7 @@
 #ifndef UV3R_H
 #define UV3R_H
 
-//UV3R defs
-char getDialEncoder(); 
-void initIOPorts();
+
 
 /*************************************
   Pin Function
@@ -71,7 +69,7 @@ void initIOPorts();
   27/R04/BUZO  Key Tone
   28/R05/INT0/EC1  Dial Int
   29/R06/INT1  Power Key/RDA1846 SCLK
-  30/R07/INT2  Key Pad/CHG Det  (Input Read the whether the battery is beeing charged) (Should be up for reading keypad?)
+  30/R07/INT2  Key Pad/CHG Det  (Input Read whether the battery is beeing charged) (Should be up for reading keypad?)
   31/R10/PWM1/T20  LAMP (Output)
   32/R11/ACK/SCK  Backlight (Output)
   33/R12/TX/SOUT  TXD
@@ -98,6 +96,14 @@ void initIOPorts();
 
 */
 
+//UV3R defs
+char getDialEncoder(); 
+void initIOPorts();
+unsigned char getKeys(); 
+char getBatteryLevel();
+unsigned char readADC(unsigned char ADC_CH);			// 8bit ADC read 
+void getSelfBias(void);
+
 #define SPK_EN R17
 
 #define RDA1846_SEN R15
@@ -109,5 +115,23 @@ void initIOPorts();
 
 #define DIAL_A R00
 #define DIAL_B R05
+
+#define LCD_BACKLIGHT R11
+
+#define  	ADC_0		0x00           	// AN0	 
+#define  	ADC_1		0x04           	// AN1	 
+#define  	ADC_2		0x08          	// AN2	 
+#define  	ADC_3		0x0C         	// AN3	  
+#define  	ADC_4		0x10           	// AN4	 
+#define  	ADC_5		0x14           	// AN5	 
+#define  	ADC_BIAS	0x3C           	// AN15	 
+
+#define  VOL_KEY    0x80
+#define  MENU_KEY   0x40
+#define  UV_KEY     0x20
+#define  LR_KEY     0x10
+#define  FA_KEY     0x08
+#define  PPT_KEY    0x01
+
 
 #endif

@@ -24,7 +24,7 @@
 #include "spi.h"
 #include "uv3r.h"
 
-void initRDA1846()
+void rda1846Init()
 {
   int i;
   RDA1846_SEN = 1;
@@ -36,7 +36,7 @@ void initRDA1846()
 }
 
 //Get the signal stength indications
-short getRSSI()
+short rdaGetRSSI()
 {
   short val = SPI(0x5F | 0x80, 0x0000) & 0x03FF;
 
@@ -50,7 +50,7 @@ unsigned char getDTMF()
   return 0;
 }
 
-void txDTMF(unsigned char* values, unsigned int len, unsigned short delay)
+void rdaTXDTMF(unsigned char* values, unsigned int len, unsigned short delay)
 {
   int i=0;
   //Set tx mode
@@ -71,26 +71,28 @@ void txDTMF(unsigned char* values, unsigned int len, unsigned short delay)
   SPI(0x1F, 0x00);
 }
 
-void setFreq(unsigned short freqU, unsigned short freqL)
+void rda1846SetFreq(unsigned short freqU, unsigned short freqL)
 {
     SPI(0x29, freqU);
     SPI(0x2A, freqL);
 }
 
-void tx()
+void rda1846TX()
 {
+  SPI(0x1F, 0xC000); //1100
   SPI(0x30, 0x3046); //TX
 }
 
-void rx(unsigned char useSq)
+void rda1846RX(unsigned char useSq)
 {
+  SPI(0x1F, 0x0000); //1100
   if (useSq)
     SPI(0x30, 0x302E); //2E RX
   else
     SPI(0x30, 0x3026); //2E RX
 }
 
-void setPower(unsigned char power)
+void rda1946SetPower(unsigned char power)
 {
 
 }

@@ -23,14 +23,13 @@
 #define RDA_H
 
 
-
 struct RDAFormat {
   char address;
   unsigned short data;
 };
 
 
-struct RDAFormat RDAinit[30] = {
+CODE struct RDAFormat RDAinit[30] = {
  { 0x30, 0x0001 }, 
 { 0x30, 0x0004 },
 { 0x04, 0x0FD0 },
@@ -72,7 +71,7 @@ struct RDAFormat RDAinit[30] = {
 //{ 0x2A, 0xd7b0 }, //NOAA 162.550
 { 0x48, 0x03FF }, //0000 0011 1111 0000
 { 0x49, 0x01b3 }, //0003
-{ 0x3C, 0x4958 },  
+{ 0x3C, 0x0958 }, //0000 1001 0101 1000 
 { 0x43, 0x1F1F },
 { 0x30, 0x3006 },
 { 0x36, 0x1000 },
@@ -80,15 +79,15 @@ struct RDAFormat RDAinit[30] = {
 };
 
 
-void initRDA1846();
+void rda1846Init();
 
-short getRSSI();
-unsigned char getDTMF();
-void txDTMF(unsigned char* values, unsigned int len, unsigned short delay);
-void setFreq(unsigned short freqU, unsigned short freqL);
-void tx();
-void rx(unsigned char useSq);
-void setPower(unsigned char power);
+short rda1846GetRSSI();
+unsigned char rda1846GetDTMF();
+void rda1846TXDTMF(unsigned char* values, unsigned int len, unsigned short delay);
+void rda1846SetFreq(unsigned short freqU, unsigned short freqL);
+void rda1846TX();
+void rda1846RX(unsigned char useSq);
+void rda1846SetPower(unsigned char power);
 
 #endif
 

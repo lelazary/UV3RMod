@@ -162,7 +162,7 @@ unsigned char getKeys()
     keys |= VOL_KEY;
 
   if (!R13) //PPT button NC
-    keys |= PPT_KEY;
+    keys |= PTT_KEY;
 
 #define INTMAX 100
 

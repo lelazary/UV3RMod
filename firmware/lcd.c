@@ -34,7 +34,7 @@ CODE unsigned char numFont[][2] =
   0xAF, 0x78,
   0x6E, 0x64,
   0xE7, 0x3C,
-  0x77, 0x36,
+  0xF7, 0x3E, //77 36 0111 0111  0011 0110
   0x8A, 0x68,
   0xFF, 0x7E,
   0xEE, 0x6C,
@@ -213,12 +213,8 @@ void lcdShowNum(unsigned short num, unsigned char pos, unsigned char base)
   }
 }
 
-void lcdShowStr(char* str, unsigned char upper)
+void lcdShowStr(char* str, unsigned char pos)
 {
-  unsigned char pos = 0;
-  if (upper) pos = 6;
   while(*str != 0)
-  {
      lcdAlphaNum(pos++, *str++);
-  }
 }

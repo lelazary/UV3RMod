@@ -131,7 +131,7 @@ void getSelfBias(void);
 #define  UV_KEY     0x20
 #define  LR_KEY     0x10
 #define  FA_KEY     0x08
-#define  PPT_KEY    0x01
+#define  PTT_KEY    0x01
 
 
 #endif

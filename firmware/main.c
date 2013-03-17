@@ -25,76 +25,183 @@
 #include "time.h"
 #include "uv3r.h"
 
+#define TRUE 1
+#define FALSE 0
 
-unsigned char	selfBias;		//
+unsigned char selfBias;
 unsigned char	i;
 
-//If we need the memory, we can start stuffing some bits together 
-struct radioSettings
+struct RadioSettings
 {
-  short trFreqM; //The transmit mega portion of the freq (BCD)
-  short trFreqK; //The transmit kilo portion of the freq (BCD)
-  short rxFreqM; //The recive mega portion of the freq (BCD)
-  short rxFreqK; //The recive kilo portion of the freq (BCD)
+  short rxFreqM; //The receive mega portion of the freq (BCD)
+  short rxFreqK; //The receive kilo portion of the freq (BCD)
+  short txFreqM; //The transmit mega portion of the freq (BCD)
+  short txFreqK; //The transmit kilo portion of the freq (BCD)
+  char offset;
+  //unsigned char contrast;
+  //unsigned char power;
+  //unsigned char volume;
+  //unsigned char ctcss;
+  //unsigned char sqOpen;
+  //unsigned char sqClose;
+  //unsigned char txDTMF[4]; //8 different dtmf transmissions
+  //unsigned char txFMDev;
+  //unsigned char options; //lpf,hpf,emp
 
-  unsigned char contrast;
-  unsigned char power;
-  unsigned char volume;
-  unsigned char ctcss;
-  unsigned char sqOpen;
-  unsigned char sqClose;
-  unsigned char txDTMF[4]; //8 diffrent dtmf transmitions
-  unsigned char txFMDev;
-  unsigned char options; //lpf,hpf,emp
+  unsigned char transmitting;
 };
 
+struct RadioSettings radioSettings;
+
+
+void initRadioSettings()
+{
+  radioSettings.rxFreqM = 145;
+  radioSettings.rxFreqK = 525;
+
+  radioSettings.txFreqM = 145;
+  radioSettings.txFreqK = 525;
+
+  radioSettings.offset = 0;
+  
+  radioSettings.transmitting = FALSE;
+
+}
+
+void showFreqDisplayMode(unsigned char showTX) 
+{
+  lcdClear();
+  if (showTX)
+  {
+    lcdShowNum(radioSettings.txFreqM, 8, 10);
+    lcdShowNum(radioSettings.txFreqK, 11, 10);
+  } else {
+    lcdShowNum(radioSettings.rxFreqM, 8, 10);
+    lcdShowNum(radioSettings.rxFreqK, 11, 10);
+  }
+
+  lcdSmallNumber(radioSettings.offset);
+  lcdShowStr("1273PL",0);
+
+}
+
+enum DISPLAY_MODE {FREQ_DISPLAY};
+void updateDisplay(unsigned char mode)
+{
+  switch(mode)
+  {
+    case FREQ_DISPLAY:
+      showFreqDisplayMode(radioSettings.transmitting);
+      break;
+  }
+}
+
+void updateNum(unsigned short* num, unsigned char digit, char encDir)
+{
+  switch(digit)
+  {
+    case 0:
+      if (encDir > 0)
+        *num += 100;
+      else
+        *num -= 100;
+      break;
+    case 1:
+      if (encDir > 0)
+        *num += 10;
+      else
+        *num -= 10;
+      break;
+    case 2:
+      *num += encDir;
+      break;
+  }
+
+  if (*num > 999) 
+    *num = 0;
+}
+
+
+unsigned char changeMode = 0;
 int main()
 {
   //Pin 31 is R10
-  int i,j,k;
-
   initIOPorts();
 
   msDelay(100);
   getSelfBias();
   lcdInit(42); //Adjust this for LCD contrast
 
+  initRadioSettings();
 
-  unsigned char reg = 0;
-  unsigned short b = '/';
-  unsigned char pos = 0;
-
-  LCD_BACKLIGHT = 1;
+  LCD_BACKLIGHT = 0;
   lcdClear();
   lcdShowStr("HACKED",6);
   lcdShowStr("VER",0);
-  lcdSetSymbol('.',0); //Lower period
+  //lcdSetSymbol('.',0); //Lower period
   lcdShowStr("001",3);
-  msDelay(2000); //Show startup screen for 2 seconds
+  msDelay(1000); //Show startup screen for 2 seconds
 
   short encoderPos = 0;
 
   //Initial RDA settings
-  //initRDA1846();
+  rda1846Init();
 
   lcdClear();
 
+  updateDisplay(FREQ_DISPLAY);
   while(1)
   {
     int k=0; 
 
-    char encoderDir = getDialEncoder();
     unsigned char keys = getKeys();
     if (keys)
     {
-      lcdShowNum(keys, 11, 16);
+      switch(keys)
+      {
+        case VOL_KEY:
+          changeMode++;
+          if (changeMode > 6)
+            changeMode = 0;
+          break;
+        case PTT_KEY:
+          radioSettings.transmitting = !radioSettings.transmitting;
+          if (radioSettings.transmitting)
+          {
+            LCD_BACKLIGHT = 1;
+            rda1846TX();
+          }
+          else
+          {
+            rda1846RX(1);
+            LCD_BACKLIGHT = 0;
+          }
+          break;
+      }
+      updateDisplay(FREQ_DISPLAY);
+    } else {
+      //radioSettings.transmitting = 0;
     }
+
+    char encoderDir = getDialEncoder();
     if (encoderDir)
     {
-      encoderPos += encoderDir;
-      lcdClear();
-      lcdShowNum(encoderPos, 5, 10);
+      if (!radioSettings.transmitting) //Dont change while transmitting
+      {
+        if (changeMode > 5)
+          radioSettings.offset += encoderDir;
+        if (changeMode > 2)
+          updateNum(&radioSettings.rxFreqK, changeMode-3, encoderDir);
+        else
+          updateNum(&radioSettings.rxFreqM, changeMode, encoderDir);
+
+      }
+
+      updateDisplay(FREQ_DISPLAY);
     }
+
+    radioSettings.txFreqM = radioSettings.rxFreqM + radioSettings.offset;
+    radioSettings.txFreqK = radioSettings.rxFreqK; 
 
     //unsigned char val = readADC(ADC_1); //Read the battery level
     WDTR	= 0x9F;

@@ -99,6 +99,11 @@ CODE unsigned char alphaNumFont[][4] =
 
 void lcdSetSymbol(unsigned char sym, unsigned char lower)
 {
+  if (sym == '.')
+  {
+    SEG14 |= 0x81;
+  }
+
 
 }
 

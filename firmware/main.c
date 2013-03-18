@@ -98,6 +98,7 @@ void showFreqDisplayMode(unsigned char showTX)
 
   lcdSmallNumber(radioSettings.offset);
   lcdShowStr("1273PL",0);
+  lcdSetSymbol('.', 0); //symbols need to be last
 }
 
 void showStatusDisplayMode()

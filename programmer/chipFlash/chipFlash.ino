@@ -64,7 +64,7 @@ void setup() {
 }
 
 
-unsigned char waitForData()
+unsigned char waitForACK()
 {
   unsigned char gotData = FALSE;
   int i;
@@ -160,7 +160,7 @@ void sendData(unsigned char* data, int length)
   {
     spiTX(data[i]);  //10101010
     delayMicroseconds(40);
-    waitForData();
+    waitForACK();
   }
 }
 
@@ -173,7 +173,7 @@ void chipSetup()
 {
   spiTX(0x55);
   delayMicroseconds(40);
-  waitForData();
+  waitForACK();
   
   spiTX(0xAA);
   delayMicroseconds(40);
@@ -187,23 +187,23 @@ unsigned char modeSetup(unsigned char mode)
 {
   spiTX(0x01);
   delayMicroseconds(40);
-  waitForData();
+  waitForACK();
   
   spiTX(0x00);
   delayMicroseconds(40);
-  waitForData();
+  waitForACK();
   
   spiTX(0x00);
   delayMicroseconds(40);
-  waitForData();
+  waitForACK();
   
   spiTX(0x05);
   delayMicroseconds(40);
-  waitForData();
+  waitForACK();
   
   spiTX(mode);
   delayMicroseconds(40);
-  waitForData();
+  waitForACK();
   digitalWrite(MC_SDA, LOW);
   delay(1);
   
@@ -236,7 +236,7 @@ void setMode()
   //sendData(data, 9);
 
   //Read chip ID
-  //delay(1); //waitForData();
+  //delay(1); //waitForACK();
   //unsigned char val = spiRX();
   //Serial.print("Mode: ");
   //Serial.println(val, HEX);
@@ -257,7 +257,7 @@ void setRegister()
   sendData(data, 10);
 
   //Read chip ID
-  delay(1); //waitForData();
+  delay(1); //waitForACK();
   unsigned char val = spiRX();
   Serial.print("register: ");
   Serial.println(val, HEX);
@@ -271,19 +271,19 @@ void setFlashAddr(unsigned short addr, unsigned char len)
 
   spiTX(len);
   delayMicroseconds(40);
-  waitForData();
+  waitForACK();
   
   spiTX(addrU);
   delayMicroseconds(40);
-  waitForData();
+  waitForACK();
   
   spiTX(addrL);
   delayMicroseconds(40);
-  waitForData();
+  waitForACK();
   
   spiTX(0x00);
   delayMicroseconds(40);
-  waitForData();
+  waitForACK();
   
 }
 
@@ -294,7 +294,7 @@ void setEraseMode()
   sendData(data, 9);
 
   //Read chip ID
-  delay(1); //waitForData();
+  delay(1); //waitForACK();
   unsigned char val = spiRX();
   Serial.print("Erase Mode: ");
   Serial.println(val, HEX);
@@ -311,7 +311,7 @@ unsigned char eraseFlash()
   delay(30);
   setEraseMode();
   
-  waitForData();
+  waitForACK();
   
   delay(2000);
   setRegister();
@@ -368,7 +368,7 @@ unsigned char programFlash(unsigned short addr, unsigned char len)
   {
     spiTX(flashData[i]);  
     delayMicroseconds(40);
-    waitForData();
+    waitForACK();
   }
   digitalWrite(MC_SDA, HIGH);
   delay(1);
@@ -415,39 +415,39 @@ void setReadRange(unsigned short startAddr, unsigned short endAddr)
 
    spiTX(05);
    delayMicroseconds(40);
-   waitForData();
+   waitForACK();
 
    spiTX(0x00);
    delayMicroseconds(40);
-   waitForData();
+   waitForACK();
 
    spiTX(0x00);
    delayMicroseconds(40);
-   waitForData();
+   waitForACK();
 
    spiTX(0x04);
    delayMicroseconds(40);
-   waitForData();
+   waitForACK();
 
    spiTX(startAddrU);
    delayMicroseconds(40);
-   waitForData();
+   waitForACK();
 
    spiTX(startAddrL);
    delayMicroseconds(40);
-   waitForData();
+   waitForACK();
 
    spiTX(endAddrU);
    delayMicroseconds(40);
-   waitForData();
+   waitForACK();
 
    spiTX(endAddrL);
    delayMicroseconds(40);
-   waitForData();
+   waitForACK();
 
    spiTX(0x00);
    delayMicroseconds(40);
-   waitForData();
+   waitForACK();
 
 }
 
@@ -469,7 +469,7 @@ unsigned char readFlash(unsigned short startAddr, unsigned short endAddr)
 
   setReadRange(startAddr, endAddr);
   
-  //waitForData();
+  //waitForACK();
   delay(1);
   
   for(i=0; i<len; i++)

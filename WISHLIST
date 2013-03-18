@@ -1,10 +1,19 @@
 This file contains a wishlist for the firmwere
 
-1) DTMF send and receive
-2) Full control over the radio and the RDA1846 through serial
-3) Simple and quick programming for channels.
-4) Automatics frequency adjustment for satellite down-link.
-5) Simple digital interface RX/TX like RTTY, morse, etc.. on the chip.
-6) Memory banks
+Mode 1) Quick interface to program rx freq, tx freq, power and PL code very quickly for repeaters. No offset, you just start with the rx freq and shift it by whichever amount you want. This will allow allow you to turn off the tx, or operate satellites.
+    At any point during this mode, you can hold the mem channel and it will ask you which number you want to save this to.
 
+Mode 2) Memory mode will allow you to go through your saved memory. At any point you can press menu and change more details about the channel.  The details will include power with granular level, DTMF TX/RX, and other functions TBD. This mode will show the channel name and the freq underneath it.
+
+Mode 4) Satellite Mode: Auto tuning of the frequency with response to the Doppler shift.
+
+Mode 5) Digital mode. Hopefully I could add some text base digital data for rx and tx. You might need to tx the text using morse code since there is no alpha numeric keypad on the radio. The digital mode will also include a store and repeat message forwarding.
+
+Mode 6) Computer mode: All the functions of the radio including the RDA1846 registers, TX, and RX will be controlled through the serial port on the radio.
+
+Mode 7) Fox/Hunt  mode. Can be used to transmit a signal intermittently (like call sign morse code). Or send the RSSI signal into the audio, and with a directional antenna you can go hunting.
+     
+Mode 8) Advance mode: Any RDA 1846 register can be set manually and saved for during startup.
+
+Mode 9) If the digital mode works, then RF programming of the radio. This will allow anyone to send you repeater information from their memory locations. I will work by selecting a memory channel to rx, and pressing a button. Then on another radio you can send the programming info. 
 

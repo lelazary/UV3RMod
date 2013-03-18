@@ -31,20 +31,24 @@
 unsigned char selfBias;
 unsigned char	i;
 
-struct RadioSettings
+CODE struct RadioSettings
 {
   short rxFreqM; //The receive mega portion of the freq (BCD)
   short rxFreqK; //The receive kilo portion of the freq (BCD)
   short txFreqM; //The transmit mega portion of the freq (BCD)
   short txFreqK; //The transmit kilo portion of the freq (BCD)
   char offset;
+  short rssi; //
+  short vssi; //
+  short dtmf; //
+  short flags; //
   //unsigned char contrast;
   //unsigned char power;
   //unsigned char volume;
   //unsigned char ctcss;
   //unsigned char sqOpen;
   //unsigned char sqClose;
-  //unsigned char txDTMF[4]; //8 different dtmf transmissions
+  unsigned char txDTMF[6]; //8 different dtmf transmissions
   //unsigned char txFMDev;
   //unsigned char options; //lpf,hpf,emp
 
@@ -64,6 +68,18 @@ void initRadioSettings()
 
   radioSettings.offset = 0;
   
+  radioSettings.rssi = 0;
+  radioSettings.vssi = 0;
+  radioSettings.dtmf = 0;
+  radioSettings.flags = 0;
+
+  radioSettings.txDTMF[0] = 0x01;
+  radioSettings.txDTMF[1] = 0x02;
+  radioSettings.txDTMF[2] = 0x03;
+  radioSettings.txDTMF[3] = 0x10; //Blank
+  radioSettings.txDTMF[4] = 0x10; //Blank
+  radioSettings.txDTMF[5] = 0x10; //Blank
+
   radioSettings.transmitting = FALSE;
 
 }
@@ -82,47 +98,126 @@ void showFreqDisplayMode(unsigned char showTX)
 
   lcdSmallNumber(radioSettings.offset);
   lcdShowStr("1273PL",0);
+}
+
+void showStatusDisplayMode()
+{
+  lcdClear();
+  lcdSetFlashPos(0xff);
+
+  lcdShowStr("VS",6);
+  lcdShowNum(radioSettings.vssi, 11, 10);
+
+  lcdShowStr("RS",0);
+  lcdShowNum(radioSettings.rssi, 5, 10);
 
 }
 
-enum DISPLAY_MODE {FREQ_DISPLAY};
+void showDTMFDisplayMode()
+{
+  lcdClear();
+  lcdShowStr("DTMFTX",6);
+
+  for(i=0; i<6; i++)
+  {
+    unsigned char digi = radioSettings.txDTMF[i];
+    if (digi < 0x10)
+    {
+      digi = digi < 10 ? '0' + digi : 'A' + digi - 10;
+      lcdAlphaNum(i, digi);
+    } else {
+      lcdAlphaNum(i, ' ');
+    }
+
+  }
+}
+
+enum DISPLAY_MODE {
+  FREQ_DISPLAY,
+  STATUS_DISPLAY,
+  DTMF_DISPLAY,
+  MAX_DISPLAY_MODE}; //Last one used to know the size of the enum
+
 void updateDisplay(unsigned char mode)
 {
-  switch(mode)
+  static unsigned char updateTime = 0;
+
+  if (!(updateTime++%100)) //Update the display every 100 loops so it will not fliker
   {
-    case FREQ_DISPLAY:
-      showFreqDisplayMode(radioSettings.transmitting);
-      break;
+    switch(mode)
+    {
+      case FREQ_DISPLAY:
+        showFreqDisplayMode(radioSettings.transmitting);
+        break;
+      case STATUS_DISPLAY:
+        showStatusDisplayMode();
+        break;
+      case DTMF_DISPLAY:
+        showDTMFDisplayMode();
+        break;
+    }
   }
 }
 
 void updateNum(unsigned short* num, unsigned char digit, char encDir)
 {
+  unsigned short val = *num;
   switch(digit)
   {
     case 0:
       if (encDir > 0)
-        *num += 100;
+        val += 100;
       else
-        *num -= 100;
+        val -= 100;
       break;
     case 1:
       if (encDir > 0)
-        *num += 10;
+        val += 10;
       else
-        *num -= 10;
+        val -= 10;
       break;
     case 2:
-      *num += encDir;
+      val += encDir;
       break;
   }
 
-  if (*num > 999) 
-    *num = 0;
+  if (val <= 999) 
+    *num = val;
 }
 
+void updateRDA1846Freq(unsigned short freqM, unsigned short freqK)
+{
+  if (freqM > 500)
+    return;
+
+  //Convert from DCB to binary of freqM and freqK while using short (2 byte) numbers
+  //The rda1846 keeps the freq in 1khz/8 steps
+  //so: 32Bit val = freqM*8000 + freqK*8
+  //since 8000 can be broken down into 125*64 we can first 
+
+  unsigned short freqKs = freqK;
+
+  //Since freqK is a fraction of 1000, 
+  //convert it into a whole number
+  if (freqK > 0 && freqK < 10)
+    freqKs = freqK*100;
+  else if (freqK >= 10 && freqK < 100)
+    freqKs = freqK*10;
+
+  unsigned short tmp = freqM*125;
+  unsigned short highWord = (tmp >> 10); //Get the top 4 bits
+  tmp = (tmp << 6); //Just get the lower bits
+
+  unsigned short lowWord =  tmp + (freqK<<3); //tmp + freqK*8
+  if (lowWord < tmp)
+    highWord += 1; //Overflow
+
+  rda1846SetFreq(highWord, lowWord);
+
+}
 
 unsigned char changeMode = 0;
+unsigned char displayMode = FREQ_DISPLAY;
 int main()
 {
   //Pin 31 is R10
@@ -149,7 +244,9 @@ int main()
 
   lcdClear();
 
-  updateDisplay(FREQ_DISPLAY);
+  int num = 0;
+  rda1846RX(1);
+
   while(1)
   {
     int k=0; 
@@ -163,23 +260,47 @@ int main()
           changeMode++;
           if (changeMode > 6)
             changeMode = 0;
+          if (displayMode == FREQ_DISPLAY)
+            lcdSetFlashPos(changeMode+6);
+          else if (displayMode == DTMF_DISPLAY)
+            lcdSetFlashPos(changeMode);
+
+          break;
+        case MENU_KEY:
+          displayMode++;
+          if (displayMode >= MAX_DISPLAY_MODE)
+            displayMode = 0;
           break;
         case PTT_KEY:
-          radioSettings.transmitting = !radioSettings.transmitting;
-          if (radioSettings.transmitting)
+          if (displayMode == FREQ_DISPLAY)
           {
-            LCD_BACKLIGHT = 1;
-            rda1846TX();
-          }
-          else
+            radioSettings.transmitting = !radioSettings.transmitting;
+            if (radioSettings.transmitting)
+            {
+              LCD_BACKLIGHT = 1;
+              rda1846TX();
+            }
+            else
+            {
+              rda1846RX(1);
+              LCD_BACKLIGHT = 0;
+            }
+            break;
+          } 
+          else if (displayMode == DTMF_DISPLAY)
           {
-            rda1846RX(1);
-            LCD_BACKLIGHT = 0;
+            rda1846TXDTMF(radioSettings.txDTMF, 6, 1000);
           }
-          break;
+
       }
-      updateDisplay(FREQ_DISPLAY);
     } else {
+      //Update status
+      short rssi, vssi, dtmf, flags;
+      rda1846GetStatus(
+          &radioSettings.rssi,
+          &radioSettings.vssi);
+          //&dtmf,
+          //&flags);
       //radioSettings.transmitting = 0;
     }
 
@@ -188,20 +309,33 @@ int main()
     {
       if (!radioSettings.transmitting) //Dont change while transmitting
       {
-        if (changeMode > 5)
-          radioSettings.offset += encoderDir;
-        if (changeMode > 2)
-          updateNum(&radioSettings.rxFreqK, changeMode-3, encoderDir);
-        else
-          updateNum(&radioSettings.rxFreqM, changeMode, encoderDir);
 
+        if (displayMode == FREQ_DISPLAY)
+        {
+          if (changeMode > 5)
+            radioSettings.offset += encoderDir;
+          if (changeMode > 2)
+            updateNum(&radioSettings.rxFreqK, changeMode-3, encoderDir);
+          else
+            updateNum(&radioSettings.rxFreqM, changeMode, encoderDir);
+
+          updateRDA1846Freq(radioSettings.rxFreqM, radioSettings.rxFreqK);
+        }
+        else if (displayMode == DTMF_DISPLAY)
+        {
+          if (changeMode > 5)
+            changeMode = 5;
+          radioSettings.txDTMF[changeMode] += encoderDir;
+          if (radioSettings.txDTMF[changeMode] > 0x10)
+            radioSettings.txDTMF[changeMode] = 0x10;
+        }
       }
-
-      updateDisplay(FREQ_DISPLAY);
     }
 
     radioSettings.txFreqM = radioSettings.rxFreqM + radioSettings.offset;
     radioSettings.txFreqK = radioSettings.rxFreqK; 
+
+    updateDisplay(displayMode);
 
     //unsigned char val = readADC(ADC_1); //Read the battery level
     WDTR	= 0x9F;

@@ -36,13 +36,19 @@ void rda1846Init()
 }
 
 //Get the signal stength indications
-short rdaGetRSSI()
+void rda1846GetStatus(short* rssi, short* vssi) //, short* dtmf, short* flags)
 {
-  short val = SPI(0x5F | 0x80, 0x0000) & 0x03FF;
+  *rssi = SPI(0x5F | 0x80, 0x0000) & 0x03FF;
+  *rssi >>= 3; //devide by 8
+  *rssi -= 135; //Per datasheet
+  *rssi *= -1;
 
-  val >>= 3; //devide by 8
-  val -= 135; //Per datasheet
-  return val;
+  *vssi = SPI(0x60 | 0x80, 0x0000) & 0x7FFF; 
+
+  //*dtmf = SPI(0x6C | 0x80, 0x0000);
+
+  //*flags = SPI(0x5C | 0x80, 0x0000);
+
 }
 
 unsigned char getDTMF()
@@ -50,25 +56,52 @@ unsigned char getDTMF()
   return 0;
 }
 
-void rdaTXDTMF(unsigned char* values, unsigned int len, unsigned short delay)
+//GPIO0 css_out
+//GPIO1 off VFM
+//GPIO2 on  VHF
+//GPIO3 off UHF
+//GPIO4 on  VRX
+//GPIO5 off TX-VCC
+//GPIO6 SQ
+//GPIO7 TX LED (red)
+
+//1101 1010 1010 1001
+
+void rda1846SetGPIO(unsigned char gpio)
+{
+  rda1846GPIO = 0; //Should we reset each time
+
+  if (gpio & TX_LED)
+    rda1846GPIO = 0xC0;
+ // if (gpio & TX_
+
+  //{ 0x1F, 0x1EB9 },        //GPIO selection 0001 1110 1011 1001
+      
+  SPI(0x1F, rda1846GPIO);
+}
+
+void rda1846TXDTMF(unsigned char* values, unsigned int len, unsigned short delay)
 {
   int i=0;
   //Set tx mode
-  SPI(0x1F, 0xC0);
+  SPI(0x1F, 0xC000);
   SPI(0x63, 0x01F0 ); //00000001 00010001
   SPI(0x30, 0x3046); //TX
   
   for(i=0; i<len; i++)
   {
-    //Get data from dtmf table
-    SPI(0x35, 2855); 
-    SPI(0x36, 6049); 
-    msDelay(delay);
+    if (values[i] < 0x10)
+    {
+      //Get data from dtmf table
+      SPI(0x35, dtmfTone[values[i]][0]); 
+      SPI(0x36, dtmfTone[values[i]][1]); 
+      msDelay(delay);
+    }
   }
 
   //Switch back to RX mode
   SPI(0x30, 0x302E); //RX
-  SPI(0x1F, 0x00);
+  SPI(0x1F, 0x0000);
 }
 
 void rda1846SetFreq(unsigned short freqU, unsigned short freqL)
@@ -79,13 +112,14 @@ void rda1846SetFreq(unsigned short freqU, unsigned short freqL)
 
 void rda1846TX()
 {
-  SPI(0x1F, 0xC000); //1100
+  SPI(0x3C, 0x0958 ); //00000001 00010001
+  SPI(0x1F, 0xC000);
   SPI(0x30, 0x3046); //TX
 }
 
 void rda1846RX(unsigned char useSq)
 {
-  SPI(0x1F, 0x0000); //1100
+  SPI(0x1F, 0);
   if (useSq)
     SPI(0x30, 0x302E); //2E RX
   else

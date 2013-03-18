@@ -25,6 +25,8 @@
 #include <hms800.h>
 
 #include "lcd.h"
+unsigned char flashPos = 0xFF;
+unsigned char flashTime = 0;
 
 CODE unsigned char numFont[][2] = 
 {
@@ -88,6 +90,11 @@ CODE unsigned char alphaNumFont[][4] =
 0x00, 0x5A, 0x66, 0x00,   //  Lower: X  0000 1010 0110 0000 Upper: X  0000 0101 0110 0000
 0x00, 0x48, 0x66, 0x00,   //  Lower: Y  0000 1000 0110 0000 Upper: Y  0000 0100 0110 0000
 0x01, 0x48, 0xBA, 0x00,   //  Lower: Z  0001 1000 1010 0000 Upper: Z  0000 0100 1011 0000
+0x01, 0x48, 0xBA, 0x00,   //  Lower: [  0001 0000 1000 0000 Upper: [  0000 0000 1011 0000 //TODO
+0x01, 0x48, 0xBA, 0x00,   //  Lower: \  0001 0000 1000 0000 Upper: \  0000 0000 1011 0000 //TODO
+0x01, 0x48, 0xBA, 0x00,   //  Lower: ]  0001 0000 1000 0000 Upper: ]  0000 0000 1011 0000 //TODO
+0x01, 0x48, 0xBA, 0x00,   //  Lower: ^  0001 0000 1000 0000 Upper: ^  0000 0000 1011 0000 //TODO
+0x01, 0x00, 0x10, 0x00,   //  Lower: _  0001 0000 0000 0000 Upper: _  0000 0000 0001 0000
 };
 
 void lcdSetSymbol(unsigned char sym, unsigned char lower)
@@ -121,11 +128,16 @@ void lcdAlphaNum(unsigned char pos, unsigned char c)
 {
 	unsigned char *ptr = (unsigned char*)0x0460 + 2 + ((pos%6)*4);  //The first 2 seg are for the small number
 
-    if (c == ' ')
-      c = 0;
-    else
-	  c = c - '/' + 1; //We start with a slash, and the first one is space
-    
+
+  if (flashPos == pos &&
+      ((flashTime++)&0x04)) //turn on and off evey 4 cycles
+    c= '_';
+
+  if (c == ' ')
+    c = 0;
+  else
+    c = c - '/' + 1; //We start with a slash, and the first one is space
+
 
 	if (pos > 5) //uppder segment
     {
@@ -141,6 +153,7 @@ void lcdAlphaNum(unsigned char pos, unsigned char c)
 	}
     
  }
+
 
 void lcdInit(unsigned char rSelf_Volt)
 {
@@ -217,4 +230,9 @@ void lcdShowStr(char* str, unsigned char pos)
 {
   while(*str != 0)
      lcdAlphaNum(pos++, *str++);
+}
+
+void lcdSetFlashPos(unsigned char pos)
+{
+  flashPos = pos;
 }

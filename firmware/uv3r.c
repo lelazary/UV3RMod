@@ -164,7 +164,7 @@ unsigned char getKeys()
   if (!R13) //PPT button NC
     keys |= PTT_KEY;
 
-#define INTMAX 100
+#define INTMAX 50
 
   //Debounce using integrator
   if (prevKeys == keys)

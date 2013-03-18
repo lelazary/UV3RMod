@@ -45,9 +45,7 @@ unsigned short SPI(unsigned char address, short data)
       RDA1846_SDIO = 0; 
 
     RDA1846_SCK = 0;
-    for(i=0; i<100; i++)WDTR	= 0x9F;;
     RDA1846_SCK = 1;
-    for(i=0; i<100; i++)WDTR	= 0x9F;;
 
     address <<= 1;
   }
@@ -57,18 +55,14 @@ unsigned short SPI(unsigned char address, short data)
   {
     R1IO=0xA7; 			//1010 0011//Speaker enable Pin 31 output R10 	
     data = 0;
-    for(i=0; i<100; i++)  //Delay
-      WDTR	= 0x9F;;
 
     for(counter = 16; counter; counter--)
     {
       data <<= 1;
       RDA1846_SCK = 0;
-      for(i=0; i<100; i++)WDTR	= 0x9F;;
       RDA1846_SCK = 1;
       if (RDA1846_SDIO)
         data |= 0x01;
-      for(i=0; i<100; i++)WDTR	= 0x9F;;
     }
 
   } else {
@@ -83,9 +77,7 @@ unsigned short SPI(unsigned char address, short data)
         RDA1846_SDIO = 0; 
 
       RDA1846_SCK = 0;
-      for(i=0; i<100; i++)WDTR	= 0x9F;;
       RDA1846_SCK = 1;
-      for(i=0; i<100; i++)WDTR	= 0x9F;;
 
       data <<= 1;
     }

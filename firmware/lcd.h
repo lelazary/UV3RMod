@@ -22,6 +22,7 @@
 #ifndef LCD_H
 #define LCD_H
 
+#define FLASH_INT 100
 
 void lcdSetSymbol(unsigned char sym, unsigned char lower);
 void lcdSetLevel(unsigned char level);
@@ -33,5 +34,6 @@ void lcdClear();
 
 void lcdShowNum(unsigned short num, unsigned char pos, unsigned char base);
 void lcdShowStr(char* str, unsigned char upper);
+void lcdSetFlashPos(unsigned char pos);
 
 #endif

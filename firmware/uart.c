@@ -22,12 +22,13 @@
 #include <MC81F8816/MC81F8816.h>
 #include <hms800.h>
 #include "uart.h"
+#include "uv3r.h"
 
-unsigned char PAGE1 txBuffer[SERIAL_BUFFER_SIZE];
+unsigned char PAGE1 txBuffer[SERIAL_BUFFER_SIZE+5];
 unsigned char PAGE1 txHead=0;
 unsigned char PAGE1 txTail=0;
 
-unsigned char PAGE1 rxBuffer[SERIAL_BUFFER_SIZE];
+unsigned char PAGE1 rxBuffer[SERIAL_BUFFER_SIZE+5];
 unsigned char PAGE1 rxHead=0;
 unsigned char PAGE1 rxTail=0;
 
@@ -40,6 +41,7 @@ void uartInit()
   //BRGCR0  = 0x3A;     // 0011_1010 BAUD_19200 @fx=8Mhz, BAUD_9600@4Mhz
   //BRGCR0  = 0x08;     //BAUD_38400;   // ACK 
   //BRGCR0  = 0x4A;     //BAUD_9600 @fx=8Mhz,
+
 }
 
 unsigned char uartAvailable()
@@ -51,6 +53,9 @@ unsigned char uartAvailable()
 short uartRead()
 {
   // if the head isn't ahead of the tail, we don't have any characters
+  while(rxHead == rxTail)
+    msDelay(500); 
+
   if (rxHead == rxTail)
   {
     return -1;
@@ -69,51 +74,90 @@ void uartWrite(unsigned char c)
     ;
 
   txBuffer[txHead] = c;
-  RXBR = rxBuffer[rxHead];
   txHead = i;
+  IFTX0=1;
+  uartIntHandler();
+  //TXSR = txBuffer[txHead];
 
 }
 
 
 void uartIntHandler(void)
 {
-  if (ASISR0)
+  if(IFRX0)
   {
-    uartInit(); 
-  } else 
-  { 
-    if(IFRX0)
+    IFRX0 = 0;
+    unsigned char i = (rxHead + 1) % SERIAL_BUFFER_SIZE;
+    if (i != rxTail)
     {
-      IFRX0 = 0;
-      unsigned char i = (rxHead + 1) % SERIAL_BUFFER_SIZE;
-      if (i != rxTail)
-      {
-        rxBuffer[rxHead] = RXBR;
-        rxHead = i;
-      }
+      rxBuffer[rxHead] = RXBR;
+      rxHead = i;
     }
+  }
 
-    if(IFTX0) 
+  if(IFTX0) 
+  {
+    IFTX0 = 0;
+    if (txHead != txTail)
     {
-      IFTX0 = 0;
-      if (txHead != txTail)
-      {
-        TXSR = txBuffer[txTail];
-        txTail = (txTail + 1) % SERIAL_BUFFER_SIZE;
-      }
-    } 
-  }   
+      TXSR = txBuffer[txTail];
+      txTail = (txTail + 1) % SERIAL_BUFFER_SIZE;
+    } else {
+    }
+  } 
 }
 
 void uartSendMsg(char* str)
 {
+  //while(*str != 0)
+  //  uartWrite(*str++);
+
+  unsigned char i;
+  
+  //LCD_BACKLIGHT=1;
+  //Wait for tx to finish
+  while(txHead != txTail)
+    WDTR	= 0x9F;
+ // LCD_BACKLIGHT=0;
+
   while(*str != 0)
-    uartWrite(*str++);
+  {
+    txBuffer[txHead] = *str++;
+    txHead = (txHead +1) % SERIAL_BUFFER_SIZE;
+  }
+  IFTX0=1;
+  uartIntHandler();
+
+
 }
 
-void uartSendNum(char num)
+void uartSendNum(unsigned short num, unsigned char base)
 {
-  uartWrite('0' + num);
+  char buf[20]; //sufficent for a short
+  char* str = &buf[sizeof(buf)-1];
+
+  *str = '\0';
+
+  if (num == 0)
+  {
+    *--str = '0';
+  } else {
+    
+    while(num > 0)
+    {
+      unsigned char digi = num % base;
+      *--str = digi < 10 ? '0' + digi : 'A' + digi - 10;
+      num /= base;
+    }
+  }
+  *--str = ':';
+  *--str = 'M';
+  *--str = 'U';
+  *--str = 'N';
+
+  uartSendMsg(str);
+  msDelay(100);
+
 }
 
 

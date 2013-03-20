@@ -219,15 +219,15 @@ void lcdShowNum(unsigned short num, unsigned char pos, unsigned char base)
 {
   if (num == 0)
   {
-     lcdAlphaNum(pos, '0');
-     return;
+    lcdAlphaNum(pos, '0');
+    return;
   }
   while(num > 0)
   {
-	unsigned char digi = num % base;
-	digi = digi < 10 ? '0' + digi : 'A' + digi - 10;
+    unsigned char digi = num % base;
+    digi = digi < 10 ? '0' + digi : 'A' + digi - 10;
     lcdAlphaNum(pos--, digi);
-	num /= base;
+    num /= base;
   }
 }
 

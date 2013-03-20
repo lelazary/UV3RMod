@@ -103,7 +103,7 @@ void showFreqDisplayMode(unsigned char showTX)
 
   lcdSmallNumber(radioSettings.offset);
   //lcdShowNum(radioSettings.ctcss, 5, 10);
-  //lcdShowStr(uartData, 1); //"1273PL",0);
+  lcdShowStr("1273PL",0);
   lcdSetSymbol('.', 0); //symbols need to be last
 }
 
@@ -225,6 +225,60 @@ void updateRDA1846Freq(unsigned short freqM, unsigned short freqK)
 unsigned char changeMode = 0;
 unsigned char displayMode = FREQ_DISPLAY;
 
+unsigned char getChar()
+{
+  while(!uartAvailable())
+    WDTR	= 0x9F;
+  return uartRead();
+}
+
+void getFreqFromSerial(unsigned short* freqM, unsigned short* freqK)
+{
+
+  *freqM  = getChar()&0xFF;
+  *freqM  <<= 8; 
+  *freqM  |= getChar()&0xFF;
+
+  *freqK  = getChar()&0xFF;
+  *freqK  <<= 8; 
+  *freqK  |= getChar()&0xFF;
+
+  uartSendMsg("Set freqM: ");
+  uartSendNum(*freqM, 10);
+  uartSendMsg("\r\n");
+
+  uartSendMsg("Set freqM: ");
+  uartSendNum(*freqK, 10);
+  uartSendMsg("\r\n");
+
+  return;
+
+
+}
+
+void processSerialCommand()
+{
+  LCD_BACKLIGHT = 1;
+  unsigned char cmd = uartRead();
+  switch(cmd)
+  {
+    case 'F':
+      getFreqFromSerial(&radioSettings.rxFreqM, &radioSettings.rxFreqK);
+      updateRDA1846Freq(radioSettings.rxFreqM, radioSettings.rxFreqK);
+      break;
+    case 'T':
+      rda1846TX();
+      break;
+    case 'R':
+      rda1846RX(1);
+      break;
+  }
+  LCD_BACKLIGHT = 0;
+
+}
+
+
+
 int main()
 {
   //Pin 31 is R10
@@ -266,23 +320,18 @@ int main()
 
   uartInit();
   
-  char msg[] = "Value: \n";
+  unsigned char val=0;
+
   while(1)
   {
+    WDTR	= 0x9F;
     int k=0; 
 
     unsigned char avl  = uartAvailable();
-    while(avl > 0)
-    {
-      uartSendMsg("Got:");
-      uartWrite(uartRead());
-      avl = uartAvailable();
-      uartSendMsg("\r\n");
-    }
+    radioSettings.ctcss=avl; //TODO temp
+    if (avl > 0)
+      processSerialCommand();
 
-    //radioSettings.ctcss++;
-    //if (radioSettings.ctcss>60)
-    //  radioSettings.ctcss=0;
 
     unsigned char keys = getKeys();
     if (keys)
@@ -290,8 +339,6 @@ int main()
       switch(keys)
       {
         case VOL_KEY:
-          uartSendMsg("HELLO World\r\n");
-          //radioSettings.ctcss=0; //TODO temp
           changeMode++;
           if (changeMode > 6)
             changeMode = 0;
@@ -312,13 +359,13 @@ int main()
             radioSettings.transmitting = !radioSettings.transmitting;
             if (radioSettings.transmitting)
             {
-              LCD_BACKLIGHT = 1;
+              //LCD_BACKLIGHT = 1;
               rda1846TX();
             }
             else
             {
               rda1846RX(1);
-              LCD_BACKLIGHT = 0;
+              //LCD_BACKLIGHT = 0;
             }
             break;
           } 
@@ -373,7 +420,6 @@ int main()
     updateDisplay(displayMode);
 
     //unsigned char val = readADC(ADC_1); //Read the battery level
-    WDTR	= 0x9F;
   }
 
   return 0;

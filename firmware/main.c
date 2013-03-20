@@ -24,6 +24,7 @@
 #include "lcd.h"
 #include "time.h"
 #include "uv3r.h"
+#include "uart.h"
 
 #define TRUE 1
 #define FALSE 0
@@ -42,6 +43,7 @@ CODE struct RadioSettings
   short vssi; //
   short dtmf; //
   short flags; //
+  unsigned short ctcss; //
   //unsigned char contrast;
   //unsigned char power;
   //unsigned char volume;
@@ -73,6 +75,9 @@ void initRadioSettings()
   radioSettings.dtmf = 0;
   radioSettings.flags = 0;
 
+  radioSettings.ctcss = 0;
+
+
   radioSettings.txDTMF[0] = 0x01;
   radioSettings.txDTMF[1] = 0x02;
   radioSettings.txDTMF[2] = 0x03;
@@ -97,7 +102,8 @@ void showFreqDisplayMode(unsigned char showTX)
   }
 
   lcdSmallNumber(radioSettings.offset);
-  lcdShowStr("1273PL",0);
+  //lcdShowNum(radioSettings.ctcss, 5, 10);
+  //lcdShowStr(uartData, 1); //"1273PL",0);
   lcdSetSymbol('.', 0); //symbols need to be last
 }
 
@@ -214,15 +220,25 @@ void updateRDA1846Freq(unsigned short freqM, unsigned short freqK)
     highWord += 1; //Overflow
 
   rda1846SetFreq(highWord, lowWord);
-
 }
 
 unsigned char changeMode = 0;
 unsigned char displayMode = FREQ_DISPLAY;
+
 int main()
 {
   //Pin 31 is R10
   initIOPorts();
+
+  IENH  = 0x0C;     //  x, INT0(6), INT1(5), INT2(4),RX(3),TX(2),x,x  // TX/RX enable 
+  IENM    = 0x80;     // T0E(7),T1E(6),T2E(5),T3E(4), -, -, -, ADCE(0) 
+  IENL    = 0x10;     // SPIE(7),BITE(6),WDTE(5),WTE(4),INT3(3),I2CE(2),x,x               
+  asm(" 
+      clrg          ;
+      EI          ; Enable global interrupt 
+      nop         ; 
+      ");
+
 
   msDelay(100);
   getSelfBias();
@@ -248,9 +264,25 @@ int main()
   int num = 0;
   rda1846RX(1);
 
+  uartInit();
+  
+  char msg[] = "Value: \n";
   while(1)
   {
     int k=0; 
+
+    unsigned char avl  = uartAvailable();
+    while(avl > 0)
+    {
+      uartSendMsg("Got:");
+      uartWrite(uartRead());
+      avl = uartAvailable();
+      uartSendMsg("\r\n");
+    }
+
+    //radioSettings.ctcss++;
+    //if (radioSettings.ctcss>60)
+    //  radioSettings.ctcss=0;
 
     unsigned char keys = getKeys();
     if (keys)
@@ -258,6 +290,8 @@ int main()
       switch(keys)
       {
         case VOL_KEY:
+          uartSendMsg("HELLO World\r\n");
+          //radioSettings.ctcss=0; //TODO temp
           changeMode++;
           if (changeMode > 6)
             changeMode = 0;

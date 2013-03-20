@@ -128,7 +128,8 @@ def eraseChip(serialPort):
   exitISP()
 
 def sendConfigBits(bits):
-  serialPort.write("F%s" % bits);
+  #serialPort.write("F%s" % bits);
+  serialPort.write("P20FF 01 05");
 
   #given a 1 sec timeout, wait 10 secods
   for t in xrange(0,10):
@@ -324,7 +325,7 @@ if __name__ == "__main__":
       configChip(options.config)
     elif options.auto:
       eraseChip(serialPort)
-      configChip("01")
+      configChip("05")
       print "Auto program"
       startAddr = 0xC000; #The start of the chip program memory
       programBuff = getFlashData(options.auto, startAddr)

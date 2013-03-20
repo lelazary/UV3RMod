@@ -272,6 +272,9 @@ void processSerialCommand()
     case 'R':
       rda1846RX(1);
       break;
+    case 'D':
+      rda1846TXDTMF(radioSettings.txDTMF, 6, 1000);
+      break;
   }
   LCD_BACKLIGHT = 0;
 

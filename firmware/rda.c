@@ -96,6 +96,8 @@ void rda1846TXDTMF(unsigned char* values, unsigned int len, unsigned short delay
       SPI(0x35, dtmfTone[values[i]][0]); 
       SPI(0x36, dtmfTone[values[i]][1]); 
       msDelay(delay);
+      SPI(0x35, 0); 
+      SPI(0x36, 0); 
     }
   }
 

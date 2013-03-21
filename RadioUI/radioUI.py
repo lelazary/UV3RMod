@@ -33,15 +33,21 @@ serialPort = serial.Serial(port = "/dev/ttyUSB1", baudrate = 9600, timeout = 0.2
 
 def sendDTMF():
   serialPort.write("D");
+  serialPort.write("\r\n");
 
 def sendTX():
   serialPort.write("T");
+  serialPort.write("\r\n");
 
 def sendRX():
   serialPort.write("R");
+  serialPort.write("\r\n");
   serialPort.write("R");
+  serialPort.write("\r\n");
   serialPort.write("R");
+  serialPort.write("\r\n");
   serialPort.write("R");
+  serialPort.write("\r\n");
 
 def sendFreq(freqM, freqK):
 
@@ -50,6 +56,7 @@ def sendFreq(freqM, freqK):
   serialPort.write(chr(freqM & 0xff));
   serialPort.write(chr(freqK>>8 & 0xff)); #//chr(0));
   serialPort.write(chr(freqK & 0xff));
+  serialPort.write("\r\n");
 
   ##given a 1 sec timeout, wait 10 secods
   #for t in xrange(0,3):

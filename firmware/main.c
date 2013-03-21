@@ -32,6 +32,7 @@
 unsigned char selfBias;
 unsigned char	i;
 unsigned short timer = 0;
+unsigned char updateTime = 0;
 
 CODE struct RadioSettings
 {
@@ -105,7 +106,9 @@ void showFreqDisplayMode(unsigned char showTX)
   lcdSmallNumber(radioSettings.offset);
   //lcdShowNum(radioSettings.ctcss, 5, 10);
   if (timer > 0)
+  {
     lcdShowNum(timer,5, 10);
+  }
   else
     lcdShowStr("1273PL",0);
   lcdSetSymbol('.', 0); //symbols need to be last
@@ -151,7 +154,6 @@ enum DISPLAY_MODE {
 
 void updateDisplay(unsigned char mode)
 {
-  static unsigned char updateTime = 0;
 
   if (!(updateTime++%100)) //Update the display every 100 loops so it will not fliker
   {
@@ -246,14 +248,17 @@ void getFreqFromSerial(unsigned short* freqM, unsigned short* freqK)
   *freqK  = getChar()&0xFF;
   *freqK  <<= 8; 
   *freqK  |= getChar()&0xFF;
+  
+  if(getChar() == '\r' && getChar() == '\n')
+  {
+    uartSendMsg("Set freqM: ");
+    uartSendNum(*freqM, 10);
+    uartSendMsg("\r\n");
 
-  uartSendMsg("Set freqM: ");
-  uartSendNum(*freqM, 10);
-  uartSendMsg("\r\n");
-
-  uartSendMsg("Set freqM: ");
-  uartSendNum(*freqK, 10);
-  uartSendMsg("\r\n");
+    uartSendMsg("Set freqM: ");
+    uartSendNum(*freqK, 10);
+    uartSendMsg("\r\n");
+  }
 
   return;
 
@@ -271,13 +276,16 @@ void processSerialCommand()
       updateRDA1846Freq(radioSettings.rxFreqM, radioSettings.rxFreqK);
       break;
     case 'T':
-      rda1846TX();
+      if(getChar() == '\r' && getChar() == '\n')
+        rda1846TX();
       break;
     case 'R':
-      rda1846RX(1);
+      if(getChar() == '\r' && getChar() == '\n')
+        rda1846RX(1);
       break;
     case 'D':
-      rda1846TXDTMF(radioSettings.txDTMF, 6, 1000);
+      if(getChar() == '\r' && getChar() == '\n')
+        rda1846TXDTMF(radioSettings.txDTMF, 6, 1000);
       break;
   }
   LCD_BACKLIGHT = 0;
@@ -407,6 +415,7 @@ int main()
       //radioSettings.transmitting = 0;
     }
 
+    
     char encoderDir = getDialEncoder();
     if (encoderDir)
     {
@@ -434,6 +443,7 @@ int main()
         }
       }
     }
+    
 
     radioSettings.txFreqM = radioSettings.rxFreqM + radioSettings.offset;
     radioSettings.txFreqK = radioSettings.rxFreqK; 

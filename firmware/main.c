@@ -31,6 +31,7 @@
 
 unsigned char selfBias;
 unsigned char	i;
+unsigned short timer = 0;
 
 CODE struct RadioSettings
 {
@@ -103,7 +104,10 @@ void showFreqDisplayMode(unsigned char showTX)
 
   lcdSmallNumber(radioSettings.offset);
   //lcdShowNum(radioSettings.ctcss, 5, 10);
-  lcdShowStr("1273PL",0);
+  if (timer > 0)
+    lcdShowNum(timer,5, 10);
+  else
+    lcdShowStr("1273PL",0);
   lcdSetSymbol('.', 0); //symbols need to be last
 }
 
@@ -325,6 +329,7 @@ int main()
   
   unsigned char val=0;
 
+
   while(1)
   {
     WDTR	= 0x9F;
@@ -335,6 +340,18 @@ int main()
     if (avl > 0)
       processSerialCommand();
 
+    if (radioSettings.transmitting)
+    {
+      timer++;
+      if (timer > 10000)
+      {
+        radioSettings.transmitting = 0;
+        rda1846RX(1);
+        timer = 0;
+        LCD_BACKLIGHT = 0;
+      }
+    }
+      
 
     unsigned char keys = getKeys();
     if (keys)
@@ -362,13 +379,14 @@ int main()
             radioSettings.transmitting = !radioSettings.transmitting;
             if (radioSettings.transmitting)
             {
-              //LCD_BACKLIGHT = 1;
+              LCD_BACKLIGHT = 1;
               rda1846TX();
             }
             else
             {
               rda1846RX(1);
-              //LCD_BACKLIGHT = 0;
+              timer = 0;
+              LCD_BACKLIGHT = 0;
             }
             break;
           } 

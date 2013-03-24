@@ -176,7 +176,7 @@ void lcdInit(unsigned char rSelf_Volt)
 	R7		    = 0x00;			//   							 
 	R7PSR		= 0x00;			// R7 LCD Segment out     
 
-	WTMR		= 0x19;			// WDT load enable 0001 1001 	//Needed for LCD clock
+	WTMR		= 0x99;			// WDT load enable 0001 1001 	//Needed for LCD clock
    
 
 	LCR	= 0x68	;			// 4COM internal bias LCD   1110 1100

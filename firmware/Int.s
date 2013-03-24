@@ -153,17 +153,17 @@
 __.INT9:
 
 Uart_Int:
-	push	A				;
-	push	X				;	
-	push	Y				;	
+	push	A				;Save Acc
+	push	X				;Save reg X
+	push	Y				;Save reg Y
 
 	call	!_uartIntHandler	;
 	
-	pop	Y				;
-	pop	X				;
-	pop	A				;
+	pop	Y				;restore reg Y
+	pop	X				;restore reg X
+	pop	A				;restore acc
 	
-	reti					;
+	reti					;Return from int
 ;================================================================== 
 ;	Uart Interrupt  
 ;================================================================== 

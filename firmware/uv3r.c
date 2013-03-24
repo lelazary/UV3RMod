@@ -109,7 +109,6 @@ void initIOPorts()
 
   R1IO=0xE7; 	// 1110 0111
   R1PSR = 0x00; //Normal pins
-  R11 = 1; //Turn on back light
 
   //R20 Vox Det (Input analog)
   //R21 Bat Det (Input analog)

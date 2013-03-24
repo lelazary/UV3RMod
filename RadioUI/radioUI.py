@@ -155,7 +155,6 @@ class RadioGui:
         entry.set_text("")
 
     def main(self):
-        serialPort = serial.Serial(port = "/dev/ttyUSB1", baudrate = 9600, timeout = 0.2)
         gtk.main()
 
 

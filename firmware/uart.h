@@ -24,10 +24,10 @@
 #define UART_H
 
 #define SERIAL_BUFFER_SIZE 16
+
 void uartInit();
 unsigned char uartAvailable();
 short uartRead();
-void uartWrite(unsigned char c);
 void uartIntHandler(void);
 void uartSendMsg(char* str);
 void uartSendNum(unsigned short num, unsigned char base);

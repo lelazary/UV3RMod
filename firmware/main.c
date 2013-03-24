@@ -300,8 +300,8 @@ int main()
   initIOPorts();
 
   IENH  = 0x0C;     //  x, INT0(6), INT1(5), INT2(4),RX(3),TX(2),x,x  // TX/RX enable 
-  IENM    = 0x80;     // T0E(7),T1E(6),T2E(5),T3E(4), -, -, -, ADCE(0) 
-  IENL    = 0x10;     // SPIE(7),BITE(6),WDTE(5),WTE(4),INT3(3),I2CE(2),x,x               
+  //IENM    = 0x80;     // T0E(7),T1E(6),T2E(5),T3E(4), -, -, -, ADCE(0) 
+  //IENL    = 0x10;     // SPIE(7),BITE(6),WDTE(5),WTE(4),INT3(3),I2CE(2),x,x               
   asm(" 
       clrg          ;
       EI          ; Enable global interrupt 
@@ -334,9 +334,6 @@ int main()
   rda1846RX(1);
 
   uartInit();
-  
-  unsigned char val=0;
-
 
   while(1)
   {
@@ -402,6 +399,7 @@ int main()
           {
             rda1846TXDTMF(radioSettings.txDTMF, 6, 1000);
           }
+          break;
 
       }
     } else {
@@ -410,12 +408,12 @@ int main()
       rda1846GetStatus(
           &radioSettings.rssi,
           &radioSettings.vssi);
-          //&dtmf,
-          //&flags);
+      //&dtmf,
+      //&flags);
       //radioSettings.transmitting = 0;
     }
 
-    
+
     char encoderDir = getDialEncoder();
     if (encoderDir)
     {

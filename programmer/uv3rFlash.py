@@ -47,7 +47,7 @@ def __generate_option_parser():
     usage_str = "usage: %prog [options]"
     parser = OptionParser(usage=usage_str)
     parser.add_option("-p", action="store", type="string",
-        dest="port", help="Use the arduino on PORT [default: %default]", default="/dev/ttyUSB0")
+        dest="port", help="Use the arduino on PORT [default: %default]", default="/dev/ttyACM0")
     parser.add_option("-e", action="store_true",
                       dest="erase", help="Erase chip [default: %default]", default=False)
     parser.add_option("-d", action="store_true",

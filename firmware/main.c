@@ -233,9 +233,13 @@ unsigned char displayMode = FREQ_DISPLAY;
 
 unsigned char getChar()
 {
-  while(!uartAvailable())
+  for(i=0; i<1000 && !uartAvailable(); i++)
     WDTR	= 0x9F;
-  return uartRead();
+
+  if (uartAvailable())
+    return uartRead();
+  else
+    return 0;
 }
 
 void getFreqFromSerial(unsigned short* freqM, unsigned short* freqK)
@@ -265,10 +269,31 @@ void getFreqFromSerial(unsigned short* freqM, unsigned short* freqK)
 
 }
 
+void setReg(unsigned char addr, short data)
+{
+  uartSendMsg("Set2: ");
+  uartSendNum(addr, 16);
+  uartSendMsg(" to ");
+  uartSendNum(data, 16);
+  uartSendMsg("\r\n");
+  
+  //SPI(0x3C, 0x0958 ); //00000001 00010001
+  //SPI(addr, data);
+  SPI(addr, data ); 
+}
+
 void processSerialCommand()
 {
   LCD_BACKLIGHT = 1;
-  unsigned char cmd = uartRead();
+  uartSendMsg("Check start\n");
+  if (getChar() != 0xAA || getChar() != 0x55)
+    return;
+  uartSendMsg("Got start\n");
+  unsigned char cmd = getChar();
+  uartSendMsg("Got Command ");
+  uartSendNum(cmd, 10);
+  uartSendMsg("\n");
+
   switch(cmd)
   {
     case 'F':
@@ -287,10 +312,31 @@ void processSerialCommand()
       if(getChar() == '\r' && getChar() == '\n')
         rda1846TXDTMF(radioSettings.txDTMF, 6, 1000);
       break;
+    case 'S':
+      {
+        unsigned char addr = getChar()&0xFF;
+
+        short data = getChar()&0xFF;
+        data <<= 8;
+        data |= getChar()&0xFF;
+
+        if(getChar() == '\r' && getChar() == '\n')
+        {
+          uartSendMsg("Set: ");
+          uartSendNum(addr, 16);
+          uartSendMsg(" to ");
+          uartSendNum(data, 16);
+          uartSendMsg("\r\n");
+
+          setReg(addr, data); //, data);
+        }
+      }
+      break;
   }
   LCD_BACKLIGHT = 0;
 
 }
+
 
 
 

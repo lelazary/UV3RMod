@@ -105,6 +105,7 @@ void rda1846TX();
 void rda1846RX(unsigned char useSq);
 void rda1846SetPower(unsigned char power);
 void rda1846SetGPIO(unsigned char gpio);
+void rda1846SetReg(unsigned short addr); //, short data);
 
 
 #define TX_LED 0x80

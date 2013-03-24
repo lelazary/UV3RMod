@@ -32,24 +32,36 @@ currentFreq = 000.000
 serialPort = serial.Serial(port = "/dev/ttyUSB1", baudrate = 9600, timeout = 0.2)
 
 def sendDTMF():
+  serialPort.write(chr(0xAA));
+  serialPort.write(chr(0x55));
   serialPort.write("D");
   serialPort.write("\r\n");
 
 def sendTX():
+  serialPort.write(chr(0xAA));
+  serialPort.write(chr(0x55));
   serialPort.write("T");
   serialPort.write("\r\n");
 
 def sendRX():
+  serialPort.write(chr(0xAA));
+  serialPort.write(chr(0x55));
   serialPort.write("R");
   serialPort.write("\r\n");
+
+  serialPort.write(chr(0xAA));
+  serialPort.write(chr(0x55));
   serialPort.write("R");
   serialPort.write("\r\n");
-  serialPort.write("R");
-  serialPort.write("\r\n");
+
+  serialPort.write(chr(0xAA));
+  serialPort.write(chr(0x55));
   serialPort.write("R");
   serialPort.write("\r\n");
 
 def sendFreq(freqM, freqK):
+  serialPort.write(chr(0xAA));
+  serialPort.write(chr(0x55));
 
   serialPort.write("F");
   serialPort.write(chr(freqM>>8 & 0xff)); #//chr(0));
@@ -58,15 +70,37 @@ def sendFreq(freqM, freqK):
   serialPort.write(chr(freqK & 0xff));
   serialPort.write("\r\n");
 
-  ##given a 1 sec timeout, wait 10 secods
-  #for t in xrange(0,3):
-  #  #if (data.startswith("OK
-  #  data = serialPort.readline(36000);
-  #  print data
-  #  if data.startswith("OK"):
-  #    return True
-  #  if data.startswith("ERR"):
-  #    return False 
+  #given a 1 sec timeout, wait 10 secods
+  for t in xrange(0,10):
+    #if (data.startswith("OK
+    data = serialPort.readline(36000);
+    print data
+    if data.startswith("OK"):
+      return True
+    if data.startswith("ERR"):
+      return False 
+
+  return True
+
+def sendRDA(addr, val):
+  print "Send to rda %X %X" % (addr, val)
+  serialPort.write(chr(0xAA));
+  serialPort.write(chr(0x55));
+
+  serialPort.write("S");
+  serialPort.write(chr(addr)); #//chr(0));
+  serialPort.write(chr(val>>8 & 0xff)); #//chr(0));
+  serialPort.write(chr(val & 0xff));
+  serialPort.write("\r\n");
+
+  for t in xrange(0,10):
+    #if (data.startswith("OK
+    data = serialPort.readline(36000);
+    print data
+    if data.startswith("OK"):
+      return True
+    if data.startswith("ERR"):
+      return False 
 
   return True
 
@@ -106,6 +140,17 @@ class RadioGui:
         self.entry.set_text("145.555")
         self.vbox.pack_start(self.entry, True, True, 0)
         self.entry.show()
+
+        self.entry2 = gtk.Entry()
+        self.entry2.set_max_length(50)
+        self.vbox.pack_start(self.entry2, True, True, 0)
+        self.entry2.show()
+
+        self.entry3 = gtk.Entry()
+        self.entry3.set_max_length(50)
+        self.entry3.connect("activate", self.setRDA, self.entry3)
+        self.vbox.pack_start(self.entry3, True, True, 0)
+        self.entry3.show()
 
         self.button = gtk.Button("TX")
         self.button.connect("button_press_event", self.startTX, None)
@@ -153,6 +198,9 @@ class RadioGui:
         entry.set_text(newtext[0])
       else:
         entry.set_text("")
+
+    def setRDA(self, widget, entry):
+      sendRDA(int(self.entry2.get_text(), 16), int(self.entry3.get_text(),16));
 
     def main(self):
         gtk.main()

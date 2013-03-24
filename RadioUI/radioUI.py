@@ -29,7 +29,7 @@ import gtk
 import re
 
 currentFreq = 000.000
-serialPort = serial.Serial(port = "/dev/ttyUSB1", baudrate = 9600, timeout = 0.2)
+serialPort = serial.Serial(port = "/dev/ttyUSB0", baudrate = 9600, timeout = 0.2)
 
 def sendDTMF():
   serialPort.write(chr(0xAA));

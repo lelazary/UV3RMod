@@ -27,6 +27,38 @@
 static unsigned char encoderState = 0;
 unsigned char i;
 
+struct RadioSettings radioSettings;
+
+void initRadioSettings()
+{
+  radioSettings.rxFreqM = 145;
+  radioSettings.rxFreqK = 525;
+
+  radioSettings.txFreqM = 145;
+  radioSettings.txFreqK = 525;
+
+  radioSettings.offset = 0;
+  
+  radioSettings.rssi = 0;
+  radioSettings.vssi = 0;
+  radioSettings.dtmf = 0;
+  radioSettings.flags = 0;
+
+  radioSettings.ctcss = 0;
+
+
+  radioSettings.txDTMF[0] = 0x01;
+  radioSettings.txDTMF[1] = 0x02;
+  radioSettings.txDTMF[2] = 0x03;
+  radioSettings.txDTMF[3] = 0x10; //Blank
+  radioSettings.txDTMF[4] = 0x10; //Blank
+  radioSettings.txDTMF[5] = 0x10; //Blank
+
+  radioSettings.transmitting = FALSE;
+  radioSettings.txTime = 0;
+
+}
+
 // Read the dial encoder using gray code to avoid debouncing. 
 //Insperations from
 // http://www.circuitsathome.com/mcu/reading-rotary-encoder-on-arduino
@@ -123,6 +155,17 @@ void initIOPorts()
   R2		  = 0x00;			//  0     0     0     0     0     0   		         
   // ADC   IO    IO    IO    IO    IO 
 
+
+  //Init interrupts
+  IENH  = 0x0C;     //  x, INT0(6), INT1(5), INT2(4),RX(3),TX(2),x,x  // TX/RX enable 
+  //IENM    = 0x80;     // T0E(7),T1E(6),T2E(5),T3E(4), -, -, -, ADCE(0) 
+  //IENL    = 0x10;     // SPIE(7),BITE(6),WDTE(5),WTE(4),INT3(3),I2CE(2),x,x               
+  asm(" 
+      clrg          ;
+      EI          ; Enable global interrupt 
+      nop         ; 
+      ");
+  
   RADIO_PW = 1; //Power on the radio
   SPK_EN = 0;  //Turn off the speaker
 }
@@ -157,8 +200,10 @@ unsigned char getKeys()
     keys |= UV_KEY;
   else if (keysADC > 50 - KEYS_ADC_OFFSET)
     keys |= MENU_KEY;
-  else if (keysADC >= 0 - KEYS_ADC_OFFSET)
+  else 
     keys |= VOL_KEY;
+
+
 
   if (!R13) //PPT button NC
     keys |= PTT_KEY;

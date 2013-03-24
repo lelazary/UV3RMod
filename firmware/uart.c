@@ -64,6 +64,18 @@ short uartRead()
   }
 }
 
+unsigned char getChar()
+{
+  int i;
+  for(i=0; i<1000 && !uartAvailable(); i++)
+    WDTR	= 0x9F;
+
+  if (uartAvailable())
+    return uartRead();
+  else
+    return 0;
+}
+
 void uartIntHandler(void)
 {
 

@@ -20,7 +20,6 @@
  */ 
 
 
-
 #ifndef UV3R_H
 #define UV3R_H
 
@@ -97,12 +96,38 @@
 */
 
 //UV3R defs
-char getDialEncoder(); 
-void initIOPorts();
-unsigned char getKeys(); 
-char getBatteryLevel();
-unsigned char readADC(unsigned char ADC_CH);			// 8bit ADC read 
-void getSelfBias(void);
+
+CODE struct RadioSettings
+{
+  short rxFreqM; //The receive mega portion of the freq (BCD)
+  short rxFreqK; //The receive kilo portion of the freq (BCD)
+  short txFreqM; //The transmit mega portion of the freq (BCD)
+  short txFreqK; //The transmit kilo portion of the freq (BCD)
+  char offset;
+  short rssi; //
+  short vssi; //
+  short dtmf; //
+  short flags; //
+  unsigned short ctcss; //
+  //unsigned char contrast;
+  //unsigned char power;
+  //unsigned char volume;
+  //unsigned char ctcss;
+  //unsigned char sqOpen;
+  //unsigned char sqClose;
+  unsigned char txDTMF[6]; //8 different dtmf transmissions
+  //unsigned char txFMDev;
+  //unsigned char options; //lpf,hpf,emp
+
+  unsigned char transmitting; //TODO, should be in options bitfield
+
+  unsigned short txTime; //The time that we have been transmiting
+};
+
+extern struct RadioSettings radioSettings;
+
+#define TRUE 1
+#define FALSE 0
 
 #define SPK_EN R17
 
@@ -133,5 +158,12 @@ void getSelfBias(void);
 #define  FA_KEY     0x08
 #define  PTT_KEY    0x01
 
+void initRadioSettings();
+char getDialEncoder(); 
+void initIOPorts();
+unsigned char getKeys(); 
+char getBatteryLevel();
+unsigned char readADC(unsigned char ADC_CH);			// 8bit ADC read 
+void getSelfBias(void);
 
 #endif

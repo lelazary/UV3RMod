@@ -19,18 +19,29 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA 
  */ 
 
+//User interface related functions
 
-#ifndef UART_H
-#define UART_H
+#ifndef UI_H
+#define UI_H
 
-#define SERIAL_BUFFER_SIZE 16
 
-void uartInit();
-unsigned char uartAvailable();
-short uartRead();
-void uartIntHandler(void);
-void uartSendMsg(char* str);
-void uartSendNum(unsigned short num, unsigned char base);
-unsigned char getChar();
+enum DISPLAY_MODE {
+  FREQ_DISPLAY,
+  STATUS_DISPLAY,
+  DTMF_DISPLAY,
+  MAX_DISPLAY_MODE}; //Last one used to know the size of the enum
+
+
+void showFreqDisplayMode(unsigned char showTX);
+void showStatusDisplayMode();
+void showDTMFDisplayMode();
+void updateDisplay(unsigned char mode);
+void updateNum(unsigned short* num, unsigned char digit, char encDir);
+
+  //Convert from DCB to binary of freqM and freqK while using short (2 byte) numbers
+void updateRDA1846Freq(unsigned short freqM, unsigned short freqK);
+
+extern unsigned char changeMode;
+extern unsigned char displayMode;
 
 #endif

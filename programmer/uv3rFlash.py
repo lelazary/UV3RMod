@@ -129,7 +129,7 @@ def eraseChip(serialPort):
 
 def sendConfigBits(bits):
   #serialPort.write("F%s" % bits);
-  serialPort.write("P20FF 01 05");
+  serialPort.write("P20FF 01 %s" % bits);
 
   #given a 1 sec timeout, wait 10 secods
   for t in xrange(0,10):

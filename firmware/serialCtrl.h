@@ -19,18 +19,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA 
  */ 
 
+//Functions related to control the radio remotly
 
-#ifndef UART_H
-#define UART_H
+#ifndef SERIALCTRL_H
+#define SERIALCTRL_H
 
-#define SERIAL_BUFFER_SIZE 16
 
-void uartInit();
-unsigned char uartAvailable();
-short uartRead();
-void uartIntHandler(void);
-void uartSendMsg(char* str);
-void uartSendNum(unsigned short num, unsigned char base);
-unsigned char getChar();
+void getFreqFromSerial(unsigned short* freqM, unsigned short* freqK);
+void setReg(unsigned char addr, short data);
+void processSerialCommand();
 
 #endif

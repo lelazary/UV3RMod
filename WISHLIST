@@ -17,3 +17,4 @@ Mode 8) Advance mode: Any RDA 1846 register can be set manually and saved for du
 
 Mode 9) If the digital mode works, then RF programming of the radio. This will allow anyone to send you repeater information from their memory locations. I will work by selecting a memory channel to rx, and pressing a button. Then on another radio you can send the programming info. 
 
+Mode 10) APRS mode: Boots straight to 144.39 mhz (or whatever you set it to), doesn't accept inputs, stays on the set frequency.

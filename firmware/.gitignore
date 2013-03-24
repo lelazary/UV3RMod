@@ -1,0 +1,10 @@
+#Ignore temp files
+
+*.lst
+*.o
+*.swp
+*.temp
+*.map
+*.out
+_.hms800elf.x
+

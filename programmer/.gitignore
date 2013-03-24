@@ -1,0 +1,4 @@
+#Ignore temp files
+
+*.swp
+*.pyc

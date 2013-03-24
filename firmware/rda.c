@@ -119,7 +119,7 @@ void rda1846TX()
   SPI(0x30, 0x3046); //TX
 }
 
-void rda1846SetReg(unsigned short addr)
+void rda1846SetReg(unsigned char addr, unsigned short data)
 {
 
   uartSendMsg("Set2: ");

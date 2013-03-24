@@ -114,7 +114,7 @@ void processSerialCommand()
           uartSendNum(data, 16);
           uartSendMsg("\r\n");
 
-          setReg(addr, data); //, data);
+          rda1846SetReg(addr, data); //, data);
         }
       }
       break;

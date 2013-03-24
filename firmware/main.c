@@ -26,6 +26,7 @@
 #include "uv3r.h"
 #include "uart.h"
 #include "ui.h"
+#include "rda.h"
 
 unsigned char selfBias;
 unsigned char	i;

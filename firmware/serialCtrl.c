@@ -26,6 +26,7 @@
 #include "uv3r.h"
 #include "uart.h"
 #include "ui.h"
+#include "rda.h"
 
 
 void getFreqFromSerial(unsigned short* freqM, unsigned short* freqK)

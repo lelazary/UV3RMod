@@ -31,10 +31,12 @@ import re
 currentFreq = 000.000
 serialPort = serial.Serial(port = "/dev/ttyUSB0", baudrate = 9600, timeout = 0.2)
 
-def sendDTMF():
+def sendDTMF(time):
   serialPort.write(chr(0xAA));
   serialPort.write(chr(0x55));
-  serialPort.write("D");
+  serialPort.write("d");
+  serialPort.write(chr(time>>8 & 0xff)); #//chr(0));
+  serialPort.write(chr(time & 0xff));
   serialPort.write("\r\n");
 
 def sendTX():
@@ -87,7 +89,7 @@ def sendRDA(addr, val):
   serialPort.write(chr(0xAA));
   serialPort.write(chr(0x55));
 
-  serialPort.write("S");
+  serialPort.write("d"); #S
   serialPort.write(chr(addr)); #//chr(0));
   serialPort.write(chr(val>>8 & 0xff)); #//chr(0));
   serialPort.write(chr(val & 0xff));
@@ -180,7 +182,7 @@ class RadioGui:
       sendRX();
     def sendDTMF(self, widget, event, data=None):
       print "send DTMF."
-      sendDTMF()
+      sendDTMF(int(self.entry2.get_text(), 10))
 
     def setFreq(self, widget, entry):
       currentFreq = self.entry.get_text()

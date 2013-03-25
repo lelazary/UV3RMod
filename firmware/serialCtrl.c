@@ -99,6 +99,21 @@ void processSerialCommand()
       if(getChar() == '\r' && getChar() == '\n')
         rda1846TXDTMF(radioSettings.txDTMF, 6, 1000);
       break;
+    case 'd':
+      {
+        uartSendMsg("Send Digital\n");
+
+        unsigned char data = getChar()&0xFF;
+
+        short time = getChar()&0xFF;
+        time <<= 8;
+        time |= getChar()&0xFF;
+
+        if(getChar() == '\r' && getChar() == '\n')
+          rda1846TXDigital(data, time);
+        uartSendMsg("Send Digital Done\n");
+      }
+      break;
     case 'S':
       {
         unsigned char addr = getChar()&0xFF;

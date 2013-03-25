@@ -185,6 +185,41 @@ void rda1846TX()
   SPI(0x30, 0x3046); //TX
 }
 
+void rda1846TXDigital(unsigned char data, unsigned short t)
+{
+  SPI(0x3C, 0x4958 ); //0100 0001 00010001
+  SPI(0x1F, 0xC000);
+  SPI(0x30, 0x3046); //TX
+
+  SPI(0x36, 0); 
+  msDelay(1000);
+
+  unsigned char i=0;
+  unsigned char j=0;
+  unsigned char b=0;
+
+  unsigned tmp = 0;
+
+  for (i=0; i<10; i++)
+  {
+    tmp = data;
+    for(b=0; b<7; b++)
+    {
+      if (tmp & 0x01)
+        SPI(0x36, 5796);  //1.415Khz
+      else
+        SPI(0x36, 6492); //1.585
+
+      msDelay(t);
+
+      tmp >>= 1;
+    }
+    msDelay(t);
+  }
+  SPI(0x36, 0); 
+  rda1846RX(1);
+}
+
 void rda1846SetReg(unsigned char addr, unsigned short data)
 {
   SPI(addr, data);

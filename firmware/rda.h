@@ -22,6 +22,40 @@
 #ifndef RDA_H
 #define RDA_H
 
+//Reg 1F
+//GPIO0 css_out
+//GPIO1 off VFM
+//GPIO2 on  VHF
+//GPIO3 off UHF
+//GPIO4 on  VRX
+//GPIO5 off TX-VCC
+//GPIO6 SQ
+//GPIO7 TX LED (red)
+
+////First byte
+//9 1001 //TX LED OFF sq output
+//
+////Second byte
+//B 1011 5: Low  4: High  (Transmit power on)
+//E 1110 5: HIGH 4: LOW   (Recive power on)
+//A 1010 5: HIGH 4: HIGH   (All Off)
+//
+////Third Byte
+//B 1011  3:Low 2: High  (VHF)
+//E 1110  3:High 2: Low  (UHF)
+//A 1010  3:Low 2: Low   (None)
+//
+////Forth Byte
+//9 1001  VFM Off and css output
+ 
+//CTCSS
+//REg 0x45
+//
+//001 inner ctcss (TX ctcss)
+//010 inner cdcss
+//101 outter ctcss
+//110 outter cdcss
+
 
 struct RDAFormat {
   char address;

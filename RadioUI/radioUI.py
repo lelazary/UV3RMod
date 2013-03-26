@@ -89,7 +89,7 @@ def sendRDA(addr, val):
   serialPort.write(chr(0xAA));
   serialPort.write(chr(0x55));
 
-  serialPort.write("d"); #S
+  serialPort.write("S"); #S
   serialPort.write(chr(addr)); #//chr(0));
   serialPort.write(chr(val>>8 & 0xff)); #//chr(0));
   serialPort.write(chr(val & 0xff));

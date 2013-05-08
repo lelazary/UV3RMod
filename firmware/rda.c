@@ -172,37 +172,32 @@ void rda1846TX()
   SPI(0x30, 0x3046); //TX
 }
 
-void rda1846TXDigital(unsigned char data, unsigned short t)
+void rda1846TXDigital(unsigned char data, unsigned short t,
+    unsigned short mark, 
+    unsigned short space)
 {
   SPI(0x3C, 0x4958 ); //0100 0001 00010001
   SPI(0x1F, 0xC000);
   SPI(0x30, 0x3046); //TX
 
+  //Start with no sound and wait a second 
+  //TODO: This is just used for testing, but needs to be Rewritten
   SPI(0x36, 0); 
   msDelay(1000);
 
-  unsigned char i=0;
-  unsigned char j=0;
   unsigned char b=0;
-
-  unsigned tmp = 0;
-
-  for (i=0; i<10; i++)
+  for(b=0; b<7; b++)
   {
-    tmp = data;
-    for(b=0; b<7; b++)
-    {
-      if (tmp & 0x01)
-        SPI(0x36, 5796);  //1.415Khz
-      else
-        SPI(0x36, 6492); //1.585
+    if (data & 0x01)
+      SPI(0x36, mark);  //1.415Khz
+    else
+      SPI(0x36, space); //1.585
 
-      msDelay(t);
-
-      tmp >>= 1;
-    }
     msDelay(t);
+
+    data >>= 1;
   }
+
   SPI(0x36, 0); 
   rda1846RX(1);
 }

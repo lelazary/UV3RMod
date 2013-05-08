@@ -101,7 +101,7 @@ void processSerialCommand()
       break;
     case 'd':
       {
-        uartSendMsg("Send Digital\n");
+        uartSendMsg("Send Digital RTTY\n");
 
         unsigned char data = getChar()&0xFF;
 
@@ -110,7 +110,10 @@ void processSerialCommand()
         time |= getChar()&0xFF;
 
         if(getChar() == '\r' && getChar() == '\n')
-          rda1846TXDigital(data, time);
+          rda1846TXDigital(data, time,
+              5796, //Mark 1.415Khz
+              6492 //space 1.585Khz
+              );
         uartSendMsg("Send Digital Done\n");
       }
       break;

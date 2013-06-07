@@ -4,8 +4,9 @@ CC_INSTALL_DIR=$(HOME)/.wine/drive_c/HMS800C
 CC=wine $(CC_INSTALL_DIR)/bin/hms800-cc
 OBJCOPY=wine $(CC_INSTALL_DIR)/bin/hms800-elf-objcopy
 OBJSIZE=wine $(CC_INSTALL_DIR)/bin/hms800-elf-size
+OBJDUMP=wine $(CC_INSTALL_DIR)/bin/hms800-elf-objdump
 
-OBJS=lcd.o rda.o spi.o time.o uv3r.o main.o Int.o uart.o ui.o serialCtrl.o
+OBJS=lcd.o rda.o spi.o time.o uv3r.o main.o Int.o uart.o ui.o serialCtrl.o util.o radioModes.o
 
 all: uv3r_firmware
 
@@ -22,6 +23,9 @@ uv3r_firmware: $(OBJS)
 
 flash: uv3r_firmware
 	../programmer/uv3rFlash.py -d -a uv3r_firmware.hex
+
+dump: uv3r_firmware
+	$(OBJDUMP) -D -S uv3r_firmware.out | less > uv3r_firmware.dis
 
 clean:
 	rm uv3r_firmware.hex *.o *.lst

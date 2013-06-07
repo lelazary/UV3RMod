@@ -27,9 +27,11 @@
 #include "uart.h"
 #include "ui.h"
 #include "rda.h"
+#include "radioModes.h"
 
 unsigned char selfBias;
 unsigned char	i;
+unsigned char currentMode = 0;
 
 int main()
 {
@@ -58,117 +60,25 @@ int main()
 
   uartInit();
 
+  unsigned short v1 = uartAvailable(); 
+  unsigned short v2 = 0x20f2;
+  unsigned short v3 = v1*v2;
+  lcdShowNum(v3, 8, 10);
+
+
   while(1)
   {
     WDTR	= 0x9F;
-    int k=0; 
+    int k = 0; 
 
     unsigned char avl  = uartAvailable();
-    radioSettings.ctcss=avl; //TODO temp
+    unsigned char keys = getKeys();
+    char encoderDir = getDialEncoder();
+
     if (avl > 0)
       processSerialCommand();
-
-    if (radioSettings.transmitting)
-    {
-      radioSettings.txTime++;
-      if (radioSettings.txTime > 10000)
-      {
-        radioSettings.transmitting = 0;
-        rda1846RX(1);
-        radioSettings.txTime = 0;
-        LCD_BACKLIGHT = 0;
-      }
-    }
-      
-
-    unsigned char keys = getKeys();
-    if (keys)
-    {
-      switch(keys)
-      {
-        case VOL_KEY:
-          changeMode++;
-          if (changeMode > 6)
-            changeMode = 0;
-          if (displayMode == FREQ_DISPLAY)
-            lcdSetFlashPos(changeMode+6);
-          else if (displayMode == DTMF_DISPLAY)
-            lcdSetFlashPos(changeMode);
-
-          break;
-        case MENU_KEY:
-          displayMode++;
-          if (displayMode >= MAX_DISPLAY_MODE)
-            displayMode = 0;
-          break;
-        case PTT_KEY:
-          if (displayMode == FREQ_DISPLAY)
-          {
-            radioSettings.transmitting = !radioSettings.transmitting;
-            if (radioSettings.transmitting)
-            {
-              LCD_BACKLIGHT = 1;
-              rda1846TX();
-            }
-            else
-            {
-              rda1846RX(1);
-              radioSettings.txTime = 0;
-              LCD_BACKLIGHT = 0;
-            }
-            break;
-          } 
-          else if (displayMode == DTMF_DISPLAY)
-          {
-            rda1846TXDTMF(radioSettings.txDTMF, 6, 1000);
-          }
-          break;
-
-      }
-    } else {
-      //Update status
-      rda1846GetStatus(
-          &radioSettings.rssi,
-          &radioSettings.vssi);
-      //&dtmf,
-      //&flags);
-      //radioSettings.transmitting = 0;
-    }
-
-
-    char encoderDir = getDialEncoder();
-    if (encoderDir)
-    {
-      if (!radioSettings.transmitting) //Dont change while transmitting
-      {
-
-        if (displayMode == FREQ_DISPLAY)
-        {
-          if (changeMode > 5)
-            radioSettings.offset += encoderDir;
-          if (changeMode > 2)
-            updateNum(&radioSettings.rxFreqK, changeMode-3, encoderDir);
-          else
-            updateNum(&radioSettings.rxFreqM, changeMode, encoderDir);
-
-          updateRDA1846Freq(radioSettings.rxFreqM, radioSettings.rxFreqK);
-        }
-        else if (displayMode == DTMF_DISPLAY)
-        {
-          if (changeMode > 5)
-            changeMode = 5;
-          radioSettings.txDTMF[changeMode] += encoderDir;
-          if (radioSettings.txDTMF[changeMode] > 0x10)
-            radioSettings.txDTMF[changeMode] = 0x10;
-        }
-      }
-    }
-    
-
-    radioSettings.txFreqM = radioSettings.rxFreqM + radioSettings.offset;
-    radioSettings.txFreqK = radioSettings.rxFreqK; 
-
-    updateDisplay(displayMode);
+    else
+      processRadioMode(currentMode, keys, encoderDir);
 
     //unsigned char val = readADC(ADC_1); //Read the battery level
   }

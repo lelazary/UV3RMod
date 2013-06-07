@@ -110,11 +110,10 @@ CODE struct RadioSettings
   short flags; //
   unsigned short ctcss; //
   //unsigned char contrast;
-  //unsigned char power;
-  //unsigned char volume;
-  //unsigned char ctcss;
-  //unsigned char sqOpen;
-  //unsigned char sqClose;
+  unsigned char power;
+  unsigned char volume;
+  unsigned short sqOpen;
+  unsigned short sqClose;
   unsigned char txDTMF[6]; //8 different dtmf transmissions
   //unsigned char txFMDev;
   //unsigned char options; //lpf,hpf,emp

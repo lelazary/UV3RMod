@@ -22,6 +22,9 @@
 #ifndef RDA_H
 #define RDA_H
 
+
+#define CTCSS_FREQ 0x4A
+
 //Reg 1F
 //GPIO0 css_out
 //GPIO1 off VFM
@@ -73,6 +76,7 @@ void rda1846RX(unsigned char useSq);
 void rda1846SetPower(unsigned char power);
 void rda1846SetGPIO(unsigned char gpio);
 void rda1846SetReg(unsigned char addr, unsigned short data);
+void rda1846SetCtcss(unsigned short freq);
 void rda1846TXDigital(unsigned char data, unsigned short t,
     unsigned short mark, unsigned short space);
 

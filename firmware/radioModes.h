@@ -19,16 +19,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA 
  */ 
 
-#include <MC81F8816/MC81F8816.h>
-#include <hms800.h>
-#include "lcd.h"
-#include "time.h"
-#include "uv3r.h"
-#include "uart.h"
-#include "ui.h"
-#include "rda.h"
-
-
 #ifndef RADIOMODES_H
 #define RADIOMODES_H
 

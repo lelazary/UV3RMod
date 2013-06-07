@@ -31,8 +31,10 @@ void lcdSmallNumber(unsigned char num);
 void lcdAlphaNum(unsigned char pos, unsigned char c);
 void lcdInit(unsigned char rSelf_volts);
 void lcdClear();
+void lcdShowFixNum(unsigned short num, unsigned char top);
+void lcdShowFrac(unsigned short num, unsigned char numDigits, unsigned char round);
 
-void lcdShowNum(unsigned short num, unsigned char pos, unsigned char base);
+unsigned char lcdShowNum(unsigned short num, unsigned char pos, unsigned char base);
 void lcdShowStr(char* str, unsigned char upper);
 void lcdSetFlashPos(unsigned char pos);
 

@@ -207,6 +207,11 @@ void rda1846SetReg(unsigned char addr, unsigned short data)
   SPI(addr, data);
 }
 
+void rda1846SetCtcss(unsigned short freq)
+{
+  SPI(CTCSS_FREQ, freq);
+}
+
 void rda1846RX(unsigned char useSq)
 {
   SPI(0x1F, 0);

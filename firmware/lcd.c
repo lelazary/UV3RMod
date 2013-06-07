@@ -25,6 +25,7 @@
 #include <hms800.h>
 
 #include "lcd.h"
+#include "util.h"
 unsigned char flashPos = 0xFF;
 unsigned char flashTime = 0;
 
@@ -215,12 +216,12 @@ void lcdClear()
 
 }
 
-void lcdShowNum(unsigned short num, unsigned char pos, unsigned char base)
+unsigned char lcdShowNum(unsigned short num, unsigned char pos, unsigned char base)
 {
   if (num == 0)
   {
     lcdAlphaNum(pos, '0');
-    return;
+    return pos;
   }
   while(num > 0)
   {
@@ -229,7 +230,56 @@ void lcdShowNum(unsigned short num, unsigned char pos, unsigned char base)
     lcdAlphaNum(pos--, digi);
     num /= base;
   }
+  return pos;
 }
+
+void lcdShowFixNum(unsigned short num, unsigned char top)
+{
+  unsigned short holeNum = num >> 8;
+  lcdShowNum(holeNum, 2, 10);
+  lcdSetSymbol('.', 0);
+  unsigned char i=0;
+  for(i=0; i<3; i++)
+  {
+    num &= 0x00FF; //Get the float part
+    num *= 10; //Scale by 10 
+    unsigned char val = num >> 8; //Get the integer part
+    lcdAlphaNum(3+i, '0' + val );
+  }
+}
+
+void lcdShowFrac(unsigned short num, unsigned char numDigits, unsigned char round)
+{
+
+  unsigned char i=0;
+  char str[7]; 
+  for(i=0; i<numDigits; i++) //Only 3 decimal digits
+  {
+    struct Fix32Num r = fixMultInt(num, 10);
+    str[i] = '0' + (r.high&0x000F);
+    num = r.low;
+  }
+  str[i] = 0;
+
+  if (round)
+  {
+    struct Fix32Num r = fixMultInt(num, 10);
+    i--;
+    if ((r.high&0x000F) > 5) //Round the lsd
+      str[i]++;
+    for(;i>0; i--) //Go back and inc any digits > 10
+    {
+      if (str[i] > '9')
+      {
+        str[i] = '0';
+        str[i-1]++;
+      }
+    }
+  }
+
+  lcdShowStr(str, 0);
+}
+
 
 void lcdShowStr(char* str, unsigned char pos)
 {

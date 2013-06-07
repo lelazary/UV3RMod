@@ -32,29 +32,6 @@ unsigned char displayMode = FREQ_DISPLAY;
 unsigned char updateTime = 0;
 
 
-void showFreqDisplayMode(unsigned char showTX) 
-{
-  lcdClear();
-  if (showTX)
-  {
-    lcdShowNum(radioSettings.txFreqM, 8, 10);
-    lcdShowNum(radioSettings.txFreqK, 11, 10);
-  } else {
-    lcdShowNum(radioSettings.rxFreqM, 8, 10);
-    lcdShowNum(radioSettings.rxFreqK, 11, 10);
-  }
-
-  lcdSmallNumber(radioSettings.offset);
-  //lcdShowNum(radioSettings.ctcss, 5, 10);
-  if (radioSettings.txTime > 0)
-  {
-    lcdShowNum(radioSettings.txTime,5, 10);
-  }
-  else
-    lcdShowStr("1273PL",0);
-  lcdSetSymbol('.', 0); //symbols need to be last
-}
-
 void showStatusDisplayMode()
 {
   lcdClear();
@@ -95,9 +72,6 @@ void updateDisplay(unsigned char mode)
   {
     switch(mode)
     {
-      case FREQ_DISPLAY:
-        showFreqDisplayMode(radioSettings.transmitting);
-        break;
       case STATUS_DISPLAY:
         showStatusDisplayMode();
         break;

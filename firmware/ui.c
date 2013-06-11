@@ -29,7 +29,6 @@
 
 unsigned char changeMode = 0;
 unsigned char displayMode = FREQ_DISPLAY;
-unsigned char updateTime = 0;
 
 
 void showStatusDisplayMode()
@@ -68,7 +67,7 @@ void showDTMFDisplayMode()
 void updateDisplay(unsigned char mode)
 {
 
-  if (!(updateTime++%100)) //Update the display every 100 loops so it will not fliker
+  //if (!(updateTime++%100)) //Update the display every 100 loops so it will not fliker
   {
     switch(mode)
     {

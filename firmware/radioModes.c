@@ -31,6 +31,7 @@
 #include "radioModes.h"
 
 
+unsigned char updateTime = 0;
 void processRadioMode(unsigned char mode, unsigned char keys, char encoderDir)
 {
   switch (mode)
@@ -55,32 +56,28 @@ void simpleRadioMode(unsigned char keys, char encoderDir)
     }
   }
 
-
-  if (keys)
+  switch(keys)
   {
-    switch(keys)
-    {
-      case VOL_KEY:
-        changeMode++;
-        if (changeMode > 6)
-          changeMode = 0;
-        lcdSetFlashPos(changeMode+6);
-        break;
-      case PTT_KEY:
-        radioSettings.transmitting = !radioSettings.transmitting;
-        if (radioSettings.transmitting)
-        {
-          LCD_BACKLIGHT = 1;
-          rda1846TX();
-        }
-        else
-        {
-          rda1846RX(1);
-          radioSettings.txTime = 0;
-          LCD_BACKLIGHT = 0;
-        }
-        break;
-    }
+    case VOL_KEY:
+      changeMode++;
+      if (changeMode > 6)
+        changeMode = 0;
+      lcdSetFlashPos(changeMode+6);
+      break;
+    case PTT_KEY:
+      radioSettings.transmitting = !radioSettings.transmitting;
+      if (radioSettings.transmitting)
+      {
+        LCD_BACKLIGHT = 1;
+        rda1846TX();
+      }
+      else
+      {
+        rda1846RX(1);
+        radioSettings.txTime = 0;
+        LCD_BACKLIGHT = 0;
+      }
+      break;
   }
 
   if (encoderDir && (!radioSettings.transmitting)) //Dont change while transmitting
@@ -110,26 +107,26 @@ void simpleRadioMode(unsigned char keys, char encoderDir)
 
 
   //update display 
-  //if (!(updateTime++%100)) //Update the display every 100 loops so it will not fliker
-  
-  lcdClear();
-  if (radioSettings.transmitting)
+  if (!(updateTime++%100)) //Update the display every 100 loops so it will not fliker
   {
-    lcdShowNum(radioSettings.txFreqM, 8, 10);
-    lcdShowNum(radioSettings.txFreqK, 11, 10);
-  } else {
-    lcdShowNum(radioSettings.rxFreqM, 8, 10);
-    lcdShowNum(radioSettings.rxFreqK, 11, 10);
-  }
+    lcdClear();
+    if (radioSettings.transmitting)
+    {
+      lcdShowNum(radioSettings.txFreqM, 8, 10);
+      lcdShowNum(radioSettings.txFreqK, 11, 10);
+    } else {
+      lcdShowNum(radioSettings.rxFreqM, 8, 10);
+      lcdShowNum(radioSettings.rxFreqK, 11, 10);
+    }
 
-  lcdSmallNumber(radioSettings.offset);
-  if (radioSettings.txTime > 0)
-  {
-    lcdShowNum(radioSettings.txTime, 5, 10);
+    lcdSmallNumber(radioSettings.offset);
+
+    if (radioSettings.txTime > 0)
+      lcdShowNum(radioSettings.txTime, 5, 10);
+    else
+      lcdShowFrac(radioSettings.ctcss, 4, 1);
+    lcdSetSymbol('.', 0); //symbols need to be last
   }
-  else
-    lcdShowFrac(radioSettings.ctcss, 4, 1);
-  lcdSetSymbol('.', 0); //symbols need to be last
 }
 
 

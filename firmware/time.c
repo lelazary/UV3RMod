@@ -47,6 +47,7 @@ void delay(unsigned short value)
 {
 	wDly_count = value-30;		// 30 us 
 
+#ifndef SIM
  asm("
  	lsr	_wDly_count+1		; 4	1/8 
 	ror	_wDly_count			; 4
@@ -62,4 +63,5 @@ void delay(unsigned short value)
 	nop					; 2
 	bne	Rpt_dly			; 4	500ns x 16 = 8us  
     ");
+#endif
 }

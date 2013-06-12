@@ -25,6 +25,7 @@
 #include <hms800.h>
 
 #include "lcd.h"
+#include "uv3r.h"
 #include "util.h"
 unsigned char flashPos = 0xFF;
 unsigned char flashTime = 0;
@@ -132,7 +133,7 @@ void lcdSmallNumber(unsigned char num)
 
 void lcdAlphaNum(unsigned char pos, unsigned char c)
 {
-	unsigned char *ptr = (unsigned char*)0x0460 + 2 + ((pos%6)*4);  //The first 2 seg are for the small number
+	unsigned char *ptr = LCD_ADDR + 2 + ((pos%6)*4);  //The first 2 seg are for the small number
 
 
   if (flashPos == pos &&
@@ -207,7 +208,7 @@ void lcdInit(unsigned char rSelf_Volt)
 
 void lcdClear()
 {
- 	unsigned char *ptr = (unsigned char*)0x0460;  //The first 2 seg are for the small number
+ 	unsigned char *ptr = LCD_ADDR;  //The first 2 seg are for the small number
 	unsigned char i=0; 
 
 	//Clear the LCD

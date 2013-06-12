@@ -125,6 +125,8 @@ CODE struct RadioSettings
 
 extern struct RadioSettings radioSettings;
 
+extern unsigned char* LCD_ADDR;
+
 #define TRUE 1
 #define FALSE 0
 

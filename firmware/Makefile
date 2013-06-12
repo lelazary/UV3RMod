@@ -8,12 +8,12 @@ OBJDUMP=wine $(CC_INSTALL_DIR)/bin/hms800-elf-objdump
 TARGET=SIM
 
 #OBJS=lcd.o rda.o spi.o time.o uv3r.o main.o Int.o uart.o ui.o serialCtrl.o util.o radioModes.o
-OBJS=lcd.o rda.o spi.o time.o uv3r.o main.o uart.o ui.o serialCtrl.o util.o radioModes.o
+OBJS=lcd.o rda.o spi.o main.o uart.o ui.o serialCtrl.o util.o radioModes.o
 
 ifeq ($(TARGET),SIM)
-	FOBJS=$(OBJS) sim/radioSim.o
+	FOBJS=$(OBJS) sim/uv3r.o
 else
-	FOBJS=$(OBJS) Int.o
+	FOBJS=$(OBJS) Int.o uv3r.o
 endif
 
 
@@ -22,7 +22,7 @@ all: uv3r_firmware
 uv3r_firmware: $(FOBJS)
 	echo "Linking..."
 ifeq ($(TARGET),SIM)
-	gcc -g -o uv3r_firmware $(FOBJS) 
+	gcc -g `pkg-config --libs --cflags gtk+-2.0` -o uv3r_firmware $(FOBJS) 
 else
 	$(CC) -ramclr -mshort -Werror -Wl,"-Map=uv3r_firmware.map" --option-file="$(CC_WINDOWS_PATH)\\options\\MC81F8816.opt" -o uv3r_firmware.out $(OBJS) 
 	$(OBJCOPY) -O srec uv3r_firmware.out uv3r_firmware.hex
@@ -31,7 +31,7 @@ endif
 
 %.o: %.c
 ifeq ($(TARGET),SIM)
-		gcc -g -Isim -c -o $*.o $<
+		gcc -g -Isim -I./ `pkg-config --libs --cflags gtk+-2.0` -c -o $*.o $<
 else
 	$(CC) -ramclr -mshort -Os -g -Werror -Wa,"-mhms800"  --option-file="$(CC_WINDOWS_PATH)\\options\\MC81F8816.opt" -Wa,"-ahls=$*.lst" -c -o $*.o $<
 endif

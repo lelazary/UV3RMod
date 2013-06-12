@@ -19,14 +19,22 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA 
  */ 
 
+
 #include <MC81F8816/MC81F8816.h>
-#include <hms800.h>
+#include <uv3r.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
-#include "uv3r.h"
+#include <gtk/gtk.h>
 
+int SEG14,SEG0,SEG1,R1IO,R16,R5IO,R5,R05,R00,R5PSR,R6IO,R06,R6,R6PSR,R7IO,R7,R7PSR,WTMR,WDTR,LCR,LBCR,R15,R13,R0IO,R0PSR,R0PU,R0,R1PSR,R2IO,R2PU,R2OD,R2,IENH,ADCRH,ADCM,ADSF,ADCRL,R24,R17,R11,ASIMR0,BRGCR0,ASISR0,IFRX0,IFTX0,RXBR,TXSR;
+//
 static unsigned char encoderState = 0;
 unsigned char i;
-unsigned char* LCD_ADDR = (unsigned char*)0x0460;
+unsigned char displayBuff[80];
+unsigned char* LCD_ADDR = displayBuff;
+
 
 // Read the dial encoder using gray code to avoid debouncing. 
 //Insperations from
@@ -74,15 +82,6 @@ void getSelfBias(void)
 {
 
   i	= readADC(ADC_BIAS);		// ADC_15 
-#ifndef SIM
-  asm("	ldx	_i				;
-      lda	#0CAh				; 3280 
-      ldy	#0Ch				;
-      div					;
-      sta	_selfBias			;
-      ");						//
-#endif
-
 }
 
 void initIOPorts()
@@ -130,16 +129,42 @@ void initIOPorts()
   IENH  = 0x0C;     //  x, INT0(6), INT1(5), INT2(4),RX(3),TX(2),x,x  // TX/RX enable 
   //IENM    = 0x80;     // T0E(7),T1E(6),T2E(5),T3E(4), -, -, -, ADCE(0) 
   //IENL    = 0x10;     // SPIE(7),BITE(6),WDTE(5),WTE(4),INT3(3),I2CE(2),x,x               
-#ifndef SIM
-  asm(" 
-      clrg          ;
-      EI          ; Enable global interrupt 
-      nop         ; 
-      ");
-#endif
   
   RADIO_PW = 1; //Power on the radio
   SPK_EN = 0;  //Turn off the speaker
+
+
+  GtkWidget *window;
+
+  int argc = 0;
+  char **argv  = NULL;
+  gtk_init(&argc, &argv);
+
+  window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  gtk_window_set_default_size(GTK_WINDOW(window), 250, 180);
+  gtk_window_set_title(GTK_WINDOW(window), "+-");
+
+  GtkWidget* frame = gtk_fixed_new();
+  gtk_container_add(GTK_CONTAINER(window), frame);
+
+  //label1 = gtk_label_new("__");
+  //gtk_fixed_put(GTK_FIXED(frame), label1, 10, 10);
+
+  //label2 = gtk_label_new("___ ___");
+  //gtk_fixed_put(GTK_FIXED(frame), label2, 10, 20);
+
+  //label3 = gtk_label_new("___ ___");
+  //gtk_fixed_put(GTK_FIXED(frame), label3, 10, 40);
+
+  GtkWidget* button = gtk_button_new_with_label("+");
+  gtk_widget_set_size_request(button, 25, 25);
+  gtk_fixed_put(GTK_FIXED(frame), button, 10, 60);
+
+  gtk_widget_show_all(window);
+
+  //g_signal_connect(button, "clicked", 
+  //    G_CALLBACK(buttonPress), NULL);
+  
 }
 
 
@@ -200,6 +225,13 @@ unsigned char getKeys()
     return prevKeys;
   }
 
+  gtk_main_iteration();
+  usleep(10000);
+  
+
   return 0;
 
 }
+
+
+

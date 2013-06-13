@@ -146,7 +146,7 @@ void lcdAlphaNum(unsigned char pos, unsigned char c)
     c = c - '/' + 1; //We start with a slash, and the first one is space
 
 
-	if (pos > 5) //uppder segment
+	if (pos > 5) //upper segment
     {
      *(ptr+0) = *(ptr+0)&0x0F | alphaNumFont[c][3]&0xF0;
      *(ptr+1) = *(ptr+1)&0x0F | alphaNumFont[c][2]&0xF0;

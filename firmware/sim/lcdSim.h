@@ -5,22 +5,26 @@
 #define NUM_SEGMENTS 16
 float lcdDisplayParam[NUM_SEGMENTS][5] = 
 {
-  {0, 0,     3,1, 0}, //Left Top -
-  {6.2, 0,   3,1, 0}, //Right Top -
-  {9.40, 4.2,     4,1, M_PI/2}, // top left |
-  {6.2, 8.2,   3,1, 0},   //middle left -
-  {9.40, 4.2+8,     4,1, M_PI/2}, //bottom left |
-  {6.2, 16.2,   3,1, 0}, //bottom left -
-  {0, 16.2,   3,1, 0}, //bottom right -
-  {-3.2, 4.2+8,     4,1, M_PI/2}, //bottom right |
-  {-0.1, 8.2,   3,1, 0},  //middle right -
-  {-3.2, 4.2,     4,1, M_PI/2}, //top right |
-  {3, 4.2,     4,1, M_PI/2}, //top middle |
-  {3, 4.2+8,     4,1, M_PI/2}, //bottom middle |
-  {-0.1, 3.7,     4,1, -M_PI/3.0}, //top left  \ ;
-  {6.1, 3.7+8,     4,1, -M_PI/3.0}, //bottom right 
-  {0.1, 3.7+8,     4,1, M_PI/3.0}, //bottom right  /
-  {6.1, 3.7,     4,1, M_PI/3.0} //top left  /
+  {0,0,0,0,0},
+  {0,12, 4,1,M_PI/2},  //Top left |
+  {4,8, 3,1,0},       //middle left -
+  {0,4, 4,1,M_PI/2},  //bottom left |
+
+  {0,0,0,0,0},
+  {4,12,4,1,M_PI/4},   //bottom left /
+  {4,4, 4,1,-M_PI/4},  //top left \ ;
+  {7,0,6,1,0},   //Top -
+
+  {0,0,0,0,0},
+  {10,12, 4,1,-M_PI/4},  //bottom right \ ;
+  {7,8, 7,1,M_PI/2},       //middle left -
+  {10,4,4,1,M_PI/4},   //top right /
+
+  {7,16, 6,1,0},       //bottom  -
+  {14,12, 4,1,M_PI/2},  //Top right|
+  {10,8, 3,1,0},       //middle right -
+  {14,4, 4,1,M_PI/2},  //bottom right |
+
 };
 
 static void

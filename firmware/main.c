@@ -77,7 +77,14 @@ int main()
 
   LCD_BACKLIGHT = 0;
   lcdClear();
-  lcdShowStr("HACKED",6);
+     getKeys();
+  //lcdShowStr("HACKED",6);
+  lcdAlphaNum(0, 'D');
+ 
+  
+  while(1)
+    getKeys();
+
   lcdShowStr("VER",0);
   //lcdSetSymbol('.',0); //Lower period
   lcdShowStr("002",3);

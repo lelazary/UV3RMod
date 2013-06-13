@@ -22,14 +22,14 @@ all: uv3r_firmware
 uv3r_firmware: $(FOBJS)
 	echo "Linking..."
 ifeq ($(TARGET),SIM)
-	gcc -g -o uv3r_firmware $(FOBJS) `pkg-config --libs --cflags gtk+-2.0`
+	gcc -g -o uv3r_firmware $(FOBJS) `pkg-config --libs --cflags gtk+-2.0` -lgthread-2.0
 else
 	$(CC) -ramclr -mshort -Werror -Wl,"-Map=uv3r_firmware.map" --option-file="$(CC_WINDOWS_PATH)\\options\\MC81F8816.opt" -o uv3r_firmware.out $(OBJS) 
 	$(OBJCOPY) -O srec uv3r_firmware.out uv3r_firmware.hex
 	$(OBJSIZE) uv3r_firmware.out 
 endif
 
-%.o: %.c
+%.o: %.c sim/lcdSim.h
 ifeq ($(TARGET),SIM)
 		gcc -g -Isim -I./ `pkg-config --libs --cflags gtk+-2.0` -c -o $*.o $<
 else

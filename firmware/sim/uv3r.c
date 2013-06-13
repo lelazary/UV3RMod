@@ -159,6 +159,9 @@ void initIOPorts()
 
   gtk_widget_show_all(window);
 
+  int i;
+  for(i=0; i<80; i++)
+    displayBuff[i] = 0;
   
 }
 
@@ -172,28 +175,74 @@ void initIOPorts()
 //l/r 207
 //
 
+unsigned short LCDBitMapping[16] =
+{
+  /* 0, */   0, //0,  
+  /* 1, */   0, //1<<10, 
+  /* 2, */   0, //1<<11,
+  /* 3, */   0, //1<<12,
+
+  /* 4, */   0,
+  /* 5, */   1<<4,
+  /* 6, */   1<<3,
+  /* 7, */   1<<13,
+
+  /* 8, */   0,
+  /* 9, */   0, //1<<6,
+  /* 10 */   0, //1<<7 | 1<<15, 
+  /* 11 */   0, //1<<8,
+
+  /* 12 */   1<<14, //1<<14,
+  /* 13 */   1<<0,
+  /* 14 */   1<<1,
+  /* 15 */   1<<2 
+};
+
+
+
 unsigned char getKeys()
 {
 
   int i;
 
   //Display LCD display
-  displaySegment(gtkArea,  5+2, 3, 0xFFFF);
-  displaySegment(gtkArea, 20+2, 3, 0xFFFF);
-  displaySegment(gtkArea, 35+2, 3, 0xFFFF);
+  displaySegment(gtkArea, 22+2, 3, 0xFFFF);
+  displaySegment(gtkArea, 39+2, 3, 0xFFFF);
 
-  displaySegment(gtkArea, 55+2, 3, 0xFFFF);
-  displaySegment(gtkArea, 70+2, 3, 0xFFFF);
-  displaySegment(gtkArea, 85+2, 3, 0xFFFF);
+  //displaySegment(gtkArea, 55+2, 3, 0xFFFF);
+  //displaySegment(gtkArea, 70+2, 3, 0xFFFF);
+  //displaySegment(gtkArea, 85+2, 3, 0xFFFF);
 
-  displaySegment(gtkArea,  5+2, 23, 0xFFFF);
-  displaySegment(gtkArea, 20+2, 23, 0xFFFF);
-  displaySegment(gtkArea, 35+2, 23, 0xFFFF);
+  //displaySegment(gtkArea,  5+2, 23, 0xFFFF);
+  //displaySegment(gtkArea, 20+2, 23, 0xFFFF);
+  //displaySegment(gtkArea, 35+2, 23, 0xFFFF);
 
-  displaySegment(gtkArea, 55+2, 23, 0xFFFF);
-  displaySegment(gtkArea, 70+2, 23, 0xFFFF);
-  displaySegment(gtkArea, 85+2, 23, 0xFFFF);
+  //displaySegment(gtkArea, 55+2, 23, 0xFFFF);
+  //displaySegment(gtkArea, 70+2, 23, 0xFFFF);
+  //displaySegment(gtkArea, 85+2, 23, 0xFFFF);
 
+  unsigned short mask = 0;
+  mask |= ((displayBuff[2]&0x0F)<<0);
+  mask |= ((displayBuff[3]&0x0F)<<4);
+  mask |= ((displayBuff[4]&0x0F)<<8);
+  mask |= ((displayBuff[5]&0x0F)<<12);
+
+  unsigned short newMask = 0;
+  for(i=0; i<16; i++)
+  {
+    if (mask&(1<<i))
+      newMask |= LCDBitMapping[i];
+  }
+
+
+  printf("%X %X %X %X  %X %X\n",
+      displayBuff[2]&0x0F,
+      displayBuff[3]&0x0F,
+      displayBuff[4]&0x0F,
+      displayBuff[5]&0x0F,
+      mask, newMask);
+  printf("\n");
+  displaySegment(gtkArea,  5+2, 3, mask);
 
   gtk_main_iteration();
   usleep(10000);

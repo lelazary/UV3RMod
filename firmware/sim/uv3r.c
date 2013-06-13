@@ -143,14 +143,14 @@ void initIOPorts()
   gtk_init(&argc, &argv);
 
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  gtk_window_set_default_size(GTK_WINDOW(window), 250, 380);
+  gtk_window_set_default_size(GTK_WINDOW(window), 400, 380);
   gtk_window_set_title(GTK_WINDOW(window), "+-");
 
   GtkWidget* frame = gtk_fixed_new();
   gtk_container_add(GTK_CONTAINER(window), frame);
 
   gtkArea = gtk_drawing_area_new();
-  gtk_widget_set_usize(gtkArea,300,200);
+  gtk_widget_set_usize(gtkArea,400,200);
   gtk_fixed_put(GTK_FIXED(frame), gtkArea, 0, 0);
 
   GtkWidget* button = gtk_button_new_with_label("m");
@@ -175,82 +175,67 @@ void initIOPorts()
 //l/r 207
 //
 
-unsigned short LCDBitMapping[16] =
+void updateLCDDisplay()
 {
-  /* 0, */   0, //0,  
-  /* 1, */   0, //1<<10, 
-  /* 2, */   0, //1<<11,
-  /* 3, */   0, //1<<12,
+  int i;
+  //Display LCD display
+  for(i=0; i<12; i++)
+  {
+    if (i>5)
+    {
+      unsigned short mask = 0;
+      mask |= ((displayBuff[(i-6)*4+2]&0xF0)>>4);
+      mask |= ((displayBuff[(i-6)*4+3]&0xF0));
+      mask |= ((displayBuff[(i-6)*4+4]&0xF0)<<4);
+      mask |= ((displayBuff[(i-6)*4+5]&0xF0)<<8);
+      displaySegment(gtkArea,  7+(i-6)*17, 3, 1, mask);
+    } else {
+      unsigned short mask = 0;
+      mask |= ((displayBuff[i*4+2]&0x0F)<<0);
+      mask |= ((displayBuff[i*4+3]&0x0F)<<4);
+      mask |= ((displayBuff[i*4+4]&0x0F)<<8);
+      mask |= ((displayBuff[i*4+5]&0x0F)<<12);
+      displaySegment(gtkArea,  7+i*17, 33, 0, mask);
+    }
+  }
 
-  /* 4, */   0,
-  /* 5, */   1<<4,
-  /* 6, */   1<<3,
-  /* 7, */   1<<13,
-
-  /* 8, */   0,
-  /* 9, */   0, //1<<6,
-  /* 10 */   0, //1<<7 | 1<<15, 
-  /* 11 */   0, //1<<8,
-
-  /* 12 */   1<<14, //1<<14,
-  /* 13 */   1<<0,
-  /* 14 */   1<<1,
-  /* 15 */   1<<2 
-};
-
-
+  gtk_main_iteration();
+  //usleep(10000);
+}
 
 unsigned char getKeys()
 {
-
-  int i;
-
-  //Display LCD display
-  displaySegment(gtkArea, 22+2, 3, 0xFFFF);
-  displaySegment(gtkArea, 39+2, 3, 0xFFFF);
-
-  //displaySegment(gtkArea, 55+2, 3, 0xFFFF);
-  //displaySegment(gtkArea, 70+2, 3, 0xFFFF);
-  //displaySegment(gtkArea, 85+2, 3, 0xFFFF);
-
-  //displaySegment(gtkArea,  5+2, 23, 0xFFFF);
-  //displaySegment(gtkArea, 20+2, 23, 0xFFFF);
-  //displaySegment(gtkArea, 35+2, 23, 0xFFFF);
-
-  //displaySegment(gtkArea, 55+2, 23, 0xFFFF);
-  //displaySegment(gtkArea, 70+2, 23, 0xFFFF);
-  //displaySegment(gtkArea, 85+2, 23, 0xFFFF);
-
-  unsigned short mask = 0;
-  mask |= ((displayBuff[2]&0x0F)<<0);
-  mask |= ((displayBuff[3]&0x0F)<<4);
-  mask |= ((displayBuff[4]&0x0F)<<8);
-  mask |= ((displayBuff[5]&0x0F)<<12);
-
-  unsigned short newMask = 0;
-  for(i=0; i<16; i++)
-  {
-    if (mask&(1<<i))
-      newMask |= LCDBitMapping[i];
-  }
-
-
-  printf("%X %X %X %X  %X %X\n",
-      displayBuff[2]&0x0F,
-      displayBuff[3]&0x0F,
-      displayBuff[4]&0x0F,
-      displayBuff[5]&0x0F,
-      mask, newMask);
-  printf("\n");
-  displaySegment(gtkArea,  5+2, 3, mask);
-
-  gtk_main_iteration();
-  usleep(10000);
-  
-
+  updateLCDDisplay();
   return 0;
+}
+
+
+
+unsigned short wDly_count;
+
+//---------------------------------------------------------------
+//	N ms delay 	by 4MHz crystal 	
+//
+//	(caution!) its only aprox because the loop is not accounted for
+void msDelay(unsigned short value)
+{
+  unsigned short i;
+  printf("Begin\n");
+  for(i =0; i<value; i++)
+  {
+    updateLCDDisplay();
+  }
+  printf("end\n");
+
 
 }
 
+//---------------------------------------------------------------
+//	N usec delay 	by 4MHz crystal 	
+//
+//	(caution!) It is available over 48us delay 
+void delay(unsigned short value)		 
+{
+}
 
 

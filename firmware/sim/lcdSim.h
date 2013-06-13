@@ -3,7 +3,7 @@
 #include <math.h>
 
 #define NUM_SEGMENTS 16
-float lcdDisplayParam[NUM_SEGMENTS][5] = 
+float lcdDisplayParamBottom[NUM_SEGMENTS][5] = 
 {
   {0,0,0,0,0},
   {0,12, 4,1,M_PI/2},  //Top left |
@@ -24,6 +24,30 @@ float lcdDisplayParam[NUM_SEGMENTS][5] =
   {14,12, 4,1,M_PI/2},  //Top right|
   {10,8, 3,1,0},       //middle right -
   {14,4, 4,1,M_PI/2},  //bottom right |
+
+};
+
+float lcdDisplayParamTop[NUM_SEGMENTS][5] = 
+{
+  {0,12, 4,1,M_PI/2},  //Top left |
+  {4,8, 3,1,0},       //middle left -
+  {0,4, 4,1,M_PI/2},  //bottom left |
+  {0,0,0,0,0},
+
+  {7,16, 6,1,0},       //bottom  -
+  {4,12,4,1,M_PI/4},   //bottom left /
+  {4,4, 4,1,-M_PI/4},  //top left \ ;
+  {7,0,6,1,0},   //Top -
+
+  {10,12, 4,1,-M_PI/4},  //bottom right \ ;
+  {7,8, 7,1,M_PI/2},       //middle left -
+  {10,4,4,1,M_PI/4},   //top right /
+  {0,0,0,0,0},
+
+  {14,12, 4,1,M_PI/2},  //Top right|
+  {10,8, 3,1,0},       //middle right -
+  {14,4, 4,1,M_PI/2},  //bottom right |
+  {0,0,0,0,0},
 
 };
 
@@ -86,7 +110,7 @@ draw_segment( GtkWidget *widget,
 }
 
 
-void displaySegment(GtkWidget* widget, int x, int y, unsigned short mask)
+void displaySegment(GtkWidget* widget, int x, int y, unsigned char top, unsigned short mask)
 {
   float scale = 3;
   int i;
@@ -95,13 +119,22 @@ void displaySegment(GtkWidget* widget, int x, int y, unsigned short mask)
     char segmentOn = 0;
     if ( (1<<i) & mask )
       segmentOn = 1;
-    draw_segment( widget,
-        lcdDisplayParam[i][0]+x, lcdDisplayParam[i][1]+y, 
-        lcdDisplayParam[i][2], lcdDisplayParam[i][3]*scale, 
-        lcdDisplayParam[i][4], 
-        segmentOn);
-  }
+    if (top)
+    {
+      draw_segment( widget,
+          lcdDisplayParamTop[i][0]+x, lcdDisplayParamTop[i][1]+y, 
+          lcdDisplayParamTop[i][2], lcdDisplayParamTop[i][3]*scale, 
+          lcdDisplayParamTop[i][4], 
+          segmentOn);
+    } else {
+      draw_segment( widget,
+          lcdDisplayParamBottom[i][0]+x, lcdDisplayParamBottom[i][1]+y, 
+          lcdDisplayParamBottom[i][2], lcdDisplayParamBottom[i][3]*scale, 
+          lcdDisplayParamBottom[i][4], 
+          segmentOn);
+    }
 
+  }
 }
 
 #endif

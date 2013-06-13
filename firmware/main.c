@@ -77,17 +77,11 @@ int main()
 
   LCD_BACKLIGHT = 0;
   lcdClear();
-     getKeys();
-  //lcdShowStr("HACKED",6);
-  lcdAlphaNum(0, 'D');
- 
-  
-  while(1)
-    getKeys();
-
+  lcdShowStr("HACKED",6);
   lcdShowStr("VER",0);
-  //lcdSetSymbol('.',0); //Lower period
   lcdShowStr("002",3);
+  
+  //lcdSetSymbol('.',0); //Lower period
   msDelay(1000); //Show startup screen for 1 second
 
   //Initial RDA settings

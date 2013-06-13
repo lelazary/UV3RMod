@@ -27,6 +27,7 @@
 static unsigned char encoderState = 0;
 unsigned char i;
 unsigned char* LCD_ADDR = (unsigned char*)0x0460;
+unsigned short wDly_count;
 
 // Read the dial encoder using gray code to avoid debouncing. 
 //Insperations from
@@ -203,3 +204,49 @@ unsigned char getKeys()
   return 0;
 
 }
+
+
+
+//---------------------------------------------------------------
+//	N ms delay 	by 4MHz crystal 	
+//
+//	(caution!) its only aprox because the loop is not accounted for
+void msDelay(unsigned short value)
+{
+   unsigned short i;
+   for(i=0; i<value; i++) 
+   {  
+      delay(1000);
+      WDTR	= 0x9F; //reset the watch dog timer
+   }
+
+}
+
+//---------------------------------------------------------------
+//	N usec delay 	by 4MHz crystal 	
+//
+//	(caution!) It is available over 48us delay 
+void delay(unsigned short value)		 
+{
+	wDly_count = value-30;		// 30 us 
+
+#ifndef SIM
+ asm("
+ 	lsr	_wDly_count+1		; 4	1/8 
+	ror	_wDly_count			; 4
+ 	lsr	_wDly_count+1		; 4
+	ror	_wDly_count			; 4
+ 	lsr	_wDly_count+1		; 4
+	ror	_wDly_count			; 4
+
+ Rpt_dly:
+	decw	_wDly_count			; 6
+	nop					; 2
+	nop					; 2
+	nop					; 2
+	bne	Rpt_dly			; 4	500ns x 16 = 8us  
+    ");
+#endif
+}
+
+

@@ -5,7 +5,7 @@ CC=wine $(CC_INSTALL_DIR)/bin/hms800-cc
 OBJCOPY=wine $(CC_INSTALL_DIR)/bin/hms800-elf-objcopy
 OBJSIZE=wine $(CC_INSTALL_DIR)/bin/hms800-elf-size
 OBJDUMP=wine $(CC_INSTALL_DIR)/bin/hms800-elf-objdump
-TARGET=SIM
+#TARGET=SIM
 
 #OBJS=lcd.o rda.o spi.o time.o uv3r.o main.o Int.o uart.o ui.o serialCtrl.o util.o radioModes.o
 OBJS=lcd.o rda.o main.o uart.o ui.o serialCtrl.o util.o radioModes.o
@@ -24,7 +24,7 @@ uv3r_firmware: $(FOBJS)
 ifeq ($(TARGET),SIM)
 	gcc -g -o uv3r_firmware $(FOBJS) `pkg-config --libs --cflags gtk+-2.0` -lgthread-2.0
 else
-	$(CC) -ramclr -mshort -Werror -Wl,"-Map=uv3r_firmware.map" --option-file="$(CC_WINDOWS_PATH)\\options\\MC81F8816.opt" -o uv3r_firmware.out $(OBJS) 
+	$(CC) -ramclr -mshort -Werror -Wl,"-Map=uv3r_firmware.map" --option-file="$(CC_WINDOWS_PATH)\\options\\MC81F8816.opt" -o uv3r_firmware.out $(FOBJS) 
 	$(OBJCOPY) -O srec uv3r_firmware.out uv3r_firmware.hex
 	$(OBJSIZE) uv3r_firmware.out 
 endif

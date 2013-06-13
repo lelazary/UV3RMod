@@ -29,7 +29,6 @@
 #include "rda.h"
 #include "radioModes.h"
 
-
 unsigned char updateTime = 0;
 unsigned char updateLoc = 0;
 
@@ -52,7 +51,7 @@ void simpleRadioMode(unsigned char keys, char encoderDir)
       if (updateLoc > 6)
         updateLoc = 0;
       break;
-    case PTT_KEY:
+    case FA_KEY:
       radioSettings.transmitting = !radioSettings.transmitting;
       if (radioSettings.transmitting)
       {
@@ -102,8 +101,5 @@ void simpleRadioMode(unsigned char keys, char encoderDir)
     uiAddSmallNum(UI_TR, &radioSettings.rxFreqK);
   }
   showUI();
-    
 
 }
-
-

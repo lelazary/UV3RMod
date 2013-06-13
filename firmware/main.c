@@ -109,14 +109,12 @@ int main()
 
   while(1)
   {
-    WDTR	= 0x9F;
+    WDTR	= 0xFF;
     int k = 0; 
 
     unsigned char avl  = uartAvailable();
     unsigned char keys = getKeys();
     char encoderDir = getDialEncoder();
-
-
 
     if (avl > 0)
       processSerialCommand();

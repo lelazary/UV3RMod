@@ -27,6 +27,8 @@
 #include <unistd.h>
 
 #include <gtk/gtk.h>
+#include <lcdSim.h>
+#include <math.h>
 
 int SEG14,SEG0,SEG1,R1IO,R16,R5IO,R5,R05,R00,R5PSR,R6IO,R06,R6,R6PSR,R7IO,R7,R7PSR,WTMR,WDTR,LCR,LBCR,R15,R13,R0IO,R0PSR,R0PU,R0,R1PSR,R2IO,R2PU,R2OD,R2,IENH,ADCRH,ADCM,ADSF,ADCRL,R24,R17,R11,ASIMR0,BRGCR0,ASISR0,IFRX0,IFTX0,RXBR,TXSR;
 //
@@ -35,6 +37,7 @@ unsigned char i;
 unsigned char displayBuff[80];
 unsigned char* LCD_ADDR = displayBuff;
 
+GtkWidget* gtkArea;
 
 // Read the dial encoder using gray code to avoid debouncing. 
 //Insperations from
@@ -80,7 +83,6 @@ unsigned char readADC(unsigned char ADC_CH)			// 8bit ADC read
 
 void getSelfBias(void)
 {
-
   i	= readADC(ADC_BIAS);		// ADC_15 
 }
 
@@ -141,29 +143,22 @@ void initIOPorts()
   gtk_init(&argc, &argv);
 
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  gtk_window_set_default_size(GTK_WINDOW(window), 250, 180);
+  gtk_window_set_default_size(GTK_WINDOW(window), 250, 380);
   gtk_window_set_title(GTK_WINDOW(window), "+-");
 
   GtkWidget* frame = gtk_fixed_new();
   gtk_container_add(GTK_CONTAINER(window), frame);
 
-  //label1 = gtk_label_new("__");
-  //gtk_fixed_put(GTK_FIXED(frame), label1, 10, 10);
+  gtkArea = gtk_drawing_area_new();
+  gtk_widget_set_usize(gtkArea,300,200);
+  gtk_fixed_put(GTK_FIXED(frame), gtkArea, 0, 0);
 
-  //label2 = gtk_label_new("___ ___");
-  //gtk_fixed_put(GTK_FIXED(frame), label2, 10, 20);
-
-  //label3 = gtk_label_new("___ ___");
-  //gtk_fixed_put(GTK_FIXED(frame), label3, 10, 40);
-
-  GtkWidget* button = gtk_button_new_with_label("+");
-  gtk_widget_set_size_request(button, 25, 25);
-  gtk_fixed_put(GTK_FIXED(frame), button, 10, 60);
+  GtkWidget* button = gtk_button_new_with_label("m");
+  gtk_widget_set_size_request(button, 35, 35);
+  gtk_fixed_put(GTK_FIXED(frame), button, 20, 220);
 
   gtk_widget_show_all(window);
 
-  //g_signal_connect(button, "clicked", 
-  //    G_CALLBACK(buttonPress), NULL);
   
 }
 
@@ -177,53 +172,28 @@ void initIOPorts()
 //l/r 207
 //
 
-
 unsigned char getKeys()
 {
 
-  static unsigned char integrator = 0;
-  static unsigned char prevKeys = 0;
-#define KEYS_ADC_OFFSET 10
-  unsigned char keys = 0;
+  int i;
 
-  unsigned char keysADC = readADC(ADC_3);
-  if (keysADC > 255 - KEYS_ADC_OFFSET)
-    keys |= 0; //no key presses
-  else if (keysADC > 207 - KEYS_ADC_OFFSET)
-    keys |= LR_KEY;  
-  else if (keysADC > 155 - KEYS_ADC_OFFSET)
-    keys |= FA_KEY;
-  else if (keysADC > 100 - KEYS_ADC_OFFSET)
-    keys |= UV_KEY;
-  else if (keysADC > 50 - KEYS_ADC_OFFSET)
-    keys |= MENU_KEY;
-  else 
-    keys |= VOL_KEY;
+  //Display LCD display
+  displaySegment(gtkArea,  5+2, 3, 0xFFFF);
+  displaySegment(gtkArea, 20+2, 3, 0xFFFF);
+  displaySegment(gtkArea, 35+2, 3, 0xFFFF);
 
+  displaySegment(gtkArea, 55+2, 3, 0xFFFF);
+  displaySegment(gtkArea, 70+2, 3, 0xFFFF);
+  displaySegment(gtkArea, 85+2, 3, 0xFFFF);
 
+  displaySegment(gtkArea,  5+2, 23, 0xFFFF);
+  displaySegment(gtkArea, 20+2, 23, 0xFFFF);
+  displaySegment(gtkArea, 35+2, 23, 0xFFFF);
 
-  if (!R13) //PPT button NC
-    keys |= PTT_KEY;
+  displaySegment(gtkArea, 55+2, 23, 0xFFFF);
+  displaySegment(gtkArea, 70+2, 23, 0xFFFF);
+  displaySegment(gtkArea, 85+2, 23, 0xFFFF);
 
-#define INTMAX 50
-
-  //Debounce using integrator
-  if (prevKeys == keys)
-  {
-    if (integrator > 0)
-      integrator--;
-  }
-  else if (integrator < INTMAX)
-    integrator++;
-
-  if (integrator == 0)
-    return 0;
-  else if (integrator >= INTMAX)
-  {
-    prevKeys = keys;
-    integrator = INTMAX;
-    return prevKeys;
-  }
 
   gtk_main_iteration();
   usleep(10000);

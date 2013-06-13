@@ -31,6 +31,8 @@
 
 
 unsigned char updateTime = 0;
+unsigned char updateLoc = 0;
+
 void processRadioMode(unsigned char mode, unsigned char keys, char encoderDir)
 {
   switch (mode)
@@ -43,25 +45,12 @@ void processRadioMode(unsigned char mode, unsigned char keys, char encoderDir)
 
 void simpleRadioMode(unsigned char keys, char encoderDir)
 {
-  if (radioSettings.transmitting)
-  {
-    radioSettings.txTime++;
-    if (radioSettings.txTime > 10000)
-    {
-      radioSettings.transmitting = 0;
-      rda1846RX(1);
-      radioSettings.txTime = 0;
-      LCD_BACKLIGHT = 0;
-    }
-  }
-
   switch(keys)
   {
     case VOL_KEY:
-      changeMode++;
-      if (changeMode > 6)
-        changeMode = 0;
-      lcdSetFlashPos(changeMode+6);
+      updateLoc++;
+      if (updateLoc > 6)
+        updateLoc = 0;
       break;
     case PTT_KEY:
       radioSettings.transmitting = !radioSettings.transmitting;
@@ -79,53 +68,42 @@ void simpleRadioMode(unsigned char keys, char encoderDir)
       break;
   }
 
+  switch(updateLoc)
+  {
+    case 0: resetEditLoc(); break;
+    case 1: uiSetEditLoc(UI_TL, 0); break;
+    case 2: uiSetEditLoc(UI_TL, 1); break;
+    case 3: uiSetEditLoc(UI_TL, 2); break;
+    case 4: uiSetEditLoc(UI_TR, 0); break;
+    case 5: uiSetEditLoc(UI_TR, 1); break;
+    case 6: uiSetEditLoc(UI_TR, 2); break;
+  }
+
   if (encoderDir && (!radioSettings.transmitting)) //Dont change while transmitting
   {
-    switch(changeMode)
-    {
-      case 6: 
-        radioSettings.offset += encoderDir;
-        break;
-      case 3:
-        updateNum(&radioSettings.rxFreqK, changeMode-3, encoderDir);
-        break;
-      case 2:
-        updateNum(&radioSettings.rxFreqM, changeMode, encoderDir);
-        break;
-      case 1:
-        radioSettings.ctcss += encoderDir;
-        rda1846SetCtcss(radioSettings.ctcss);
-        break;
-    }
+    uiSetEditValue(encoderDir);
     updateRDA1846Freq(radioSettings.rxFreqM, radioSettings.rxFreqK);
   }
 
-
-  radioSettings.txFreqM = radioSettings.rxFreqM + radioSettings.offset;
-  radioSettings.txFreqK = radioSettings.rxFreqK; 
-
-
-  //update display 
-  if (!(updateTime++%100)) //Update the display every 100 loops so it will not fliker
+  initUI();
+  if (radioSettings.transmitting)
   {
-    lcdClear();
-    if (radioSettings.transmitting)
+    uiAddBigNum(UI_TR, &radioSettings.txTime);
+    radioSettings.txTime++;
+    if (radioSettings.txTime > 10000)
     {
-      lcdShowNum(radioSettings.txFreqM, 8, 10);
-      lcdShowNum(radioSettings.txFreqK, 11, 10);
-    } else {
-      lcdShowNum(radioSettings.rxFreqM, 8, 10);
-      lcdShowNum(radioSettings.rxFreqK, 11, 10);
+      radioSettings.transmitting = 0;
+      rda1846RX(1);
+      radioSettings.txTime = 0;
+      LCD_BACKLIGHT = 0;
     }
-
-    lcdSmallNumber(radioSettings.offset);
-
-    if (radioSettings.txTime > 0)
-      lcdShowNum(radioSettings.txTime, 5, 10);
-    else
-      lcdShowFrac(radioSettings.ctcss, 4, 1);
-    lcdSetSymbol('.', 0); //symbols need to be last
+  } else {
+    uiAddSmallNum(UI_TL, &radioSettings.rxFreqM);
+    uiAddSmallNum(UI_TR, &radioSettings.rxFreqK);
   }
+  showUI();
+    
+
 }
 
 

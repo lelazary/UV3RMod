@@ -29,7 +29,238 @@
 unsigned char changeMode = 0;
 unsigned char displayMode = FREQ_DISPLAY;
 
+char uiDisplay[13]; //Allow for null
+char symbol[2];
+char uiTopNum[2];
 
+void* uiPtr[5];
+char uiType[5] = {UI_NONE, UI_NONE, UI_NONE, UI_NONE, UI_NONE};
+char uiEditLoc[5] = {-1, -1, -1, -1, -1};
+char uiEditPos = -1;
+unsigned char flashCnt = 0;
+#define FLASH_INTERVAL 0x80
+
+
+void showStr(unsigned char idx, void* ptr)
+{
+  char* str = (char*)ptr;
+  unsigned char p = idx*3;
+  while(*str != 0)
+    uiDisplay[p++] = *str++;
+
+  if (uiEditLoc[idx] != -1 && 
+      ((flashCnt++)&FLASH_INTERVAL) )
+  {
+    uiDisplay[idx*3 + uiEditLoc[idx]] = '_';
+  }
+}
+
+void showNum(unsigned char idx, void* ptr, unsigned char large)
+{
+
+  unsigned char base = 10;
+  unsigned short num = *(unsigned short*)ptr;
+
+  unsigned char uiIdx = idx*3;
+  uiDisplay[uiIdx] =   ' ';
+  uiDisplay[uiIdx+1] = ' ';
+  uiDisplay[uiIdx+2] = ' ';
+  if (large)
+  {
+    uiDisplay[uiIdx-1] =   ' ';
+    uiDisplay[uiIdx-2] = ' ';
+    uiDisplay[uiIdx-3] = ' ';
+  }
+
+  if (num == 0)
+  {
+    uiDisplay[uiIdx+2] = '0';
+  } else {
+    uiIdx += 2;
+    while(num > 0)
+    {
+      unsigned char digi = num % base;
+      digi = digi < 10 ? '0' + digi : 'A' + digi - 10;
+      uiDisplay[uiIdx--] = digi;
+      num /= base;
+    }
+  }
+
+  if (uiEditLoc[idx] != -1 && 
+      ((flashCnt++)&FLASH_INTERVAL) )
+  {
+    uiDisplay[idx*3 + (2-uiEditLoc[idx])] = '_';
+  }
+}
+
+void showNumTop(unsigned char idx, void* ptr)
+{
+
+  unsigned short num = *(unsigned short*)ptr;
+
+  uiTopNum[0] = ' ';
+  uiTopNum[1] = ' ';
+
+  unsigned char tens = num/10;
+  unsigned char ones = num%10;
+
+  uiTopNum[0] = '0' + tens;
+  uiTopNum[1] = '0' + ones;
+
+  if (uiEditLoc[idx] != -1 && 
+      ((flashCnt++)&FLASH_INTERVAL) )
+  {
+    uiTopNum[1-uiEditLoc[idx]] = '_';
+  }
+
+
+}
+
+void showUI()
+{
+
+  unsigned char i;
+  for(i=0; i<5; i++)
+  {
+    switch(uiType[i])
+    {
+      case UI_NUM_SMALL:
+        if (i==UI_TOP_NUM)
+          showNumTop(i, uiPtr[i]);
+        else
+          showNum(i, uiPtr[i], 0);
+        break;
+      case UI_NUM_LARGE:
+          showNum(i, uiPtr[i], 1);
+        break;
+      case UI_STR:
+        showStr(i, uiPtr[i]);
+        break;
+    }
+  }
+
+  uiDisplay[12] = 0;
+  lcdShowStr(uiDisplay, 0);
+  //symbol[0],
+  //symbol[1],
+}
+
+void initUI()
+{
+  unsigned char i=0;
+
+  for(i=0; i<12; i++)
+    uiDisplay[i] = '_';
+  symbol[0] = ' ';
+  symbol[1] = ' ';
+  uiTopNum[0] = '_';
+  uiTopNum[1] = '_';
+
+}
+
+
+void uiAddSmallNum(unsigned char pos, void* ptr)
+{
+  uiPtr[pos] = ptr;
+  uiType[pos] = UI_NUM_SMALL;
+}
+
+void uiAddBigNum(unsigned char pos, void* ptr)
+{
+  uiPtr[pos] = ptr;
+  uiType[pos] = UI_NUM_LARGE;
+}
+
+void uiAddStr(unsigned char pos, void* ptr)
+{
+  uiPtr[pos] = ptr;
+  uiType[pos] = UI_STR;
+}
+
+void uiIncDecStr(unsigned char pos, char dir)
+{
+  if (uiType[pos] != UI_STR)
+    return;
+
+  char* str = (char*)uiPtr[pos];
+  
+  str[uiEditLoc[pos]] += dir;
+  if (str[uiEditLoc[pos]] > 'z')
+    str[uiEditLoc[pos]] = 0;
+}
+
+void uiIncDecNum(unsigned char pos, char dir)
+{
+  if (uiType[pos] != UI_NUM_SMALL)
+    return;
+
+  unsigned short* num = (unsigned short*)uiPtr[pos];
+
+  switch(uiEditLoc[pos])
+  {
+    case 2:
+      if (pos != UI_TOP_NUM)
+      {
+        if (dir > 0)
+          *num += 100;
+        else
+          *num -= 100;
+        break;
+      }
+    case 1:
+      if (dir > 0)
+        *num += 10;
+      else
+        *num -= 10;
+      break;
+    case 0:
+      *num += dir;
+      break;
+  }
+
+  if (pos == UI_TOP_NUM)
+  {
+    if (*num > 99) 
+      *num = 99;
+
+  } else {
+    if (*num > 999) 
+      *num = 999;
+  }
+}
+
+void uiSetEditLoc(unsigned char pos, unsigned char loc)
+{
+  //TODO change to bitfield
+  char i;
+  for(i=0; i<5; i++)
+    uiEditLoc[i] = -1;
+  uiEditLoc[pos] = loc;
+  uiEditPos = pos;
+}
+
+void resetEditLoc()
+{
+  char i;
+  for(i=0; i<5; i++)
+    uiEditLoc[i] = -1;
+}
+
+void uiSetEditValue(char dir)
+{
+  switch(uiType[uiEditPos])
+  {
+    case UI_NUM_SMALL:
+    case UI_NUM_LARGE:
+      uiIncDecNum(uiEditPos, dir);
+      break;
+  }
+
+
+}
+
+
+////////////////////////////////////////////////////////////////////////
 void showStatusDisplayMode()
 {
   lcdClear();

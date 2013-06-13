@@ -24,6 +24,24 @@
 #ifndef UI_H
 #define UI_H
 
+enum UI_Loc {UI_BL, UI_BR, UI_TL, UI_TR, UI_TOP_NUM};
+enum Ui_Types {UI_NONE, UI_NUM_SMALL, UI_NUM_LARGE, UI_STR};
+
+void showStr(unsigned char idx, void* ptr);
+void showNumSmall(unsigned char idx, void* ptr);
+void showNumTop(unsigned char idx, void* ptr);
+void showUI();
+void initUI();
+void uiAddSmallNum(unsigned char pos, void* ptr);
+void uiAddBigNum(unsigned char pos, void* ptr);
+void uiAddStr(unsigned char pos, void* ptr);
+void uiIncDecStr(unsigned char pos, char dir);
+void uiIncDecNum(unsigned char pos, char dir);
+void uiSetEditLoc(unsigned char pos, unsigned char loc);
+void resetEditLoc();
+void uiSetEditValue(char dir);
+
+
 
 enum DISPLAY_MODE {
   FREQ_DISPLAY,

@@ -97,6 +97,15 @@ int main()
   unsigned short v3 = v1*v2;
   lcdShowNum(v3, 8, 10);
 
+  initUI();
+  //unsigned short num = 10;
+  //char testStr[5] = "test";
+
+  //uiAddNum(UI_BR, &num);
+  ////uiAddStr(UI_BL, testStr);
+
+  ////uiSetEditLoc(UI_TL, 1);
+  
 
   while(1)
   {
@@ -106,12 +115,16 @@ int main()
     unsigned char avl  = uartAvailable();
     unsigned char keys = getKeys();
     char encoderDir = getDialEncoder();
+
+
+
     if (avl > 0)
       processSerialCommand();
     else
       processRadioMode(currentMode, keys, encoderDir);
 
     //unsigned char val = readADC(ADC_1); //Read the battery level
+
   }
 
   return 0;

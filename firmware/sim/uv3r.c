@@ -32,41 +32,19 @@
 
 int SEG14,SEG0,SEG1,R1IO,R16,R5IO,R5,R05,R00,R5PSR,R6IO,R06,R6,R6PSR,R7IO,R7,R7PSR,WTMR,WDTR,LCR,LBCR,R15,R13,R0IO,R0PSR,R0PU,R0,R1PSR,R2IO,R2PU,R2OD,R2,IENH,ADCRH,ADCM,ADSF,ADCRL,R24,R17,R11,ASIMR0,BRGCR0,ASISR0,IFRX0,IFTX0,RXBR,TXSR;
 //
-static unsigned char encoderState = 0;
 unsigned char i;
 unsigned char displayBuff[80];
 unsigned char* LCD_ADDR = displayBuff;
 
 GtkWidget* gtkArea;
+GtkWidget* buttons[8];
+
+unsigned char buttonsState = 0;
+unsigned char encoderState = 0;
 
 // Read the dial encoder using gray code to avoid debouncing. 
 //Insperations from
 // http://www.circuitsathome.com/mcu/reading-rotary-encoder-on-arduino
-char getDialEncoder()
-{
-  //static char encStateTable[] = {0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0};
-  static char encStateTable[] =   {0, 1,0,-1,-1,0,1, 0, 0,1,0,-1,-1,0,1,0};
-
-  //Save the previous state by shifting it by 2 and inserting the
-  //current pin A and B state
-  //lcdShowNum(DIAL_B, 11, 16);
-  //lcdShowNum(encoderState & 0x01, 5, 16);
-  if (DIAL_B != (encoderState & 0x01)) //Check that DIAL_B has changed, Could be handle in INT
-  {
-    encoderState <<= 1; 
-    if (DIAL_A) encoderState |= 0x01;
-    encoderState <<= 1;
-    if (DIAL_B) encoderState |= 0x01;
-    //lcdShowStr("T", 6);
-    //lcdShowNum( (encoderState & 0x0f), 5, 16);
-    //msDelay(1000);
-    //Look up in the table weather its a valid state and in which direction
-    return encStateTable[ (encoderState & 0x0f) ];
-  } else {
-    //lcdShowStr("F", 6);
-    return 0;
-  }
-}
 
 unsigned char readADC(unsigned char ADC_CH)			// 8bit ADC read 
 {
@@ -86,8 +64,25 @@ void getSelfBias(void)
   i	= readADC(ADC_BIAS);		// ADC_15 
 }
 
+void buttonPress(GtkWidget *widget, gpointer data)
+{
+  buttonsState |= GPOINTER_TO_INT(data);
+}
+
+void encoderPress(GtkWidget *widget, gpointer data)
+{
+  if (GPOINTER_TO_INT(data))
+  {
+    encoderState = +1;
+  } else {
+    encoderState = -1;
+  }
+}
+
+
 void initIOPorts()
 {
+  int i;
   //R00 Dial Data (Input + pullup)
   //R04 Key tone (output)
   //R05 Dial In  (Input + pullup)
@@ -153,13 +148,54 @@ void initIOPorts()
   gtk_widget_set_usize(gtkArea,400,200);
   gtk_fixed_put(GTK_FIXED(frame), gtkArea, 0, 0);
 
-  GtkWidget* button = gtk_button_new_with_label("m");
-  gtk_widget_set_size_request(button, 35, 35);
-  gtk_fixed_put(GTK_FIXED(frame), button, 20, 220);
+  buttons[0] = gtk_button_new_with_label("LR");
+  gtk_widget_set_size_request(buttons[0], 35, 35);
+  gtk_fixed_put(GTK_FIXED(frame), buttons[0], 30, 200);
+  g_signal_connect(buttons[0], "clicked", G_CALLBACK(buttonPress), GINT_TO_POINTER(LR_KEY));
+
+  buttons[1] = gtk_button_new_with_label("FA");
+  gtk_widget_set_size_request(buttons[1], 35, 35);
+  gtk_fixed_put(GTK_FIXED(frame), buttons[1], 30, 240);
+  g_signal_connect(buttons[1], "clicked", G_CALLBACK(buttonPress), GINT_TO_POINTER(FA_KEY));
+
+  buttons[2] = gtk_button_new_with_label("UV");
+  gtk_widget_set_size_request(buttons[2], 35, 35);
+  gtk_fixed_put(GTK_FIXED(frame), buttons[2], 120, 240);
+  g_signal_connect(buttons[2], "clicked", G_CALLBACK(buttonPress), GINT_TO_POINTER(UV_KEY));
+
+  buttons[3] = gtk_button_new_with_label("M");
+  gtk_widget_set_size_request(buttons[3], 35, 35);
+  gtk_fixed_put(GTK_FIXED(frame), buttons[3], 160, 240);
+  g_signal_connect(buttons[3], "clicked", G_CALLBACK(buttonPress), GINT_TO_POINTER(MENU_KEY));
+
+  buttons[4] = gtk_button_new_with_label("V");
+  gtk_widget_set_size_request(buttons[4], 35, 35);
+  gtk_fixed_put(GTK_FIXED(frame), buttons[4], 200, 240);
+  g_signal_connect(buttons[4], "clicked", G_CALLBACK(buttonPress), GINT_TO_POINTER(VOL_KEY));
+
+  buttons[5] = gtk_button_new_with_label("PTT");
+  gtk_widget_set_size_request(buttons[5], 100, 35);
+  gtk_fixed_put(GTK_FIXED(frame), buttons[5], 20, 280);
+  g_signal_connect(buttons[5], "clicked", G_CALLBACK(buttonPress), GINT_TO_POINTER(PTT_KEY));
+
+
+  buttons[6] = gtk_button_new_with_label("+");
+  gtk_widget_set_size_request(buttons[6], 35, 35);
+  gtk_fixed_put(GTK_FIXED(frame), buttons[6], 120, 200);
+  g_signal_connect(buttons[6], "clicked", G_CALLBACK(encoderPress), GINT_TO_POINTER(1));
+
+  buttons[7] = gtk_button_new_with_label("-");
+  gtk_widget_set_size_request(buttons[7], 35, 35);
+  gtk_fixed_put(GTK_FIXED(frame), buttons[7], 155, 200);
+  g_signal_connect(buttons[7], "clicked", G_CALLBACK(encoderPress), GINT_TO_POINTER(0));
 
   gtk_widget_show_all(window);
 
-  int i;
+  for(i=0; i<6; i++)
+  {
+  }
+  
+
   for(i=0; i<80; i++)
     displayBuff[i] = 0;
   
@@ -205,8 +241,18 @@ void updateLCDDisplay()
 
 unsigned char getKeys()
 {
+  unsigned char b= buttonsState;
+  buttonsState = 0;
   updateLCDDisplay();
-  return 0;
+  return b;
+}
+
+char getDialEncoder()
+{
+  char s = encoderState;
+  encoderState = 0;
+  updateLCDDisplay();
+  return s;
 }
 
 
@@ -220,14 +266,10 @@ unsigned short wDly_count;
 void msDelay(unsigned short value)
 {
   unsigned short i;
-  printf("Begin\n");
-  for(i =0; i<value; i++)
+  for(i =0; i<value/10; i++)
   {
     updateLCDDisplay();
   }
-  printf("end\n");
-
-
 }
 
 //---------------------------------------------------------------

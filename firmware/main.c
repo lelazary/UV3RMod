@@ -106,8 +106,6 @@ int main()
     unsigned char avl  = uartAvailable();
     unsigned char keys = getKeys();
     char encoderDir = getDialEncoder();
-    printf("Keys %X %i\n", keys, encoderDir);
-
     if (avl > 0)
       processSerialCommand();
     else

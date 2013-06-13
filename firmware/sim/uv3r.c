@@ -235,15 +235,14 @@ void updateLCDDisplay()
     }
   }
 
-  gtk_main_iteration();
-  //usleep(10000);
+  gtk_main_iteration_do(FALSE);
+  usleep(1000);
 }
 
 unsigned char getKeys()
 {
   unsigned char b= buttonsState;
   buttonsState = 0;
-  updateLCDDisplay();
   return b;
 }
 

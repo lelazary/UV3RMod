@@ -21,11 +21,15 @@ uv3r_firmware.out
 
 //% Section 6  - SOURCE FILES
 lcd.c
-main.c
 rda.c
-spi.c
-time.c
+main.c
+uart.c
+ui.c
+serialCtrl.c
+util.c
+radioModes.c
 uv3r.c
+spi.c
 //%end-srcfiles
 
 //% Section 7  - COMPILER NAME
@@ -76,9 +80,14 @@ MC81F8816
 //% Section 20 - INCLUDE FILES
 lcd.h
 rda.h
-spi.h
-time.h
+main.h
+uart.h
+ui.h
+serialCtrl.h
+util.h
+radioModes.h
 uv3r.h
+spi.h
 //%end-include-files
 
 //% Section 21 - Device FILES

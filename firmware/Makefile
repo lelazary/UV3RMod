@@ -1,4 +1,3 @@
-
 CC_WINDOWS_PATH="C:\\HMS800C"
 CC_INSTALL_DIR=$(HOME)/.wine/drive_c/HMS800C
 CC=wine $(CC_INSTALL_DIR)/bin/hms800-cc
